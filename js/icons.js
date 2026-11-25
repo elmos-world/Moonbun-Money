@@ -1,3 +1,4 @@
+import { ICON_ART } from './magic-art.js';
 // Icon set for Moonbun Money — hand-drawn in SVG (24×24) like the rest of the site: a fine ink
 // pen line on white paper, grey screentone dots for shading and one soft rose wash. Use icon(name, size?).
 const L = 'var(--ic-line, #2f2a33)';
@@ -98,9 +99,16 @@ const inked = name => {
   if (!bodyCache.has(name)) bodyCache.set(name, (D[name] || D.other).replace(/#[0-9a-fA-F]{6}\b/g, mute));
   return bodyCache.get(name);
 };
+let icSeq = 0;
 export function icon(name, size = 22, label = '') {
+  const a11y = label ? `role="img" aria-label="${label}"` : 'aria-hidden="true" focusable="false"';
+  const art = ICON_ART[name] || (!D[name] && ICON_ART.other);
+  if (art) {   // magical-girl charm icons (magic-art.js); ids made unique per copy
+    const u = `c${++icSeq}_`;
+    return `<svg class="ic qv ic-${name}" viewBox="${art[0]}" width="${size}" height="${size}" fill="none" ${a11y}>${art[1].replace(/(id="|url\(#|href="#)/g, `$1${u}`)}</svg>`;
+  }
   const body = inked(D[name] ? name : 'other');
-  return `<svg class="ic ic-${name}" viewBox="0 0 24 24" width="${size}" height="${size}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true" focusable="false"'}>${body}</svg>`;
+  return `<svg class="ic ic-${name}" viewBox="0 0 24 24" width="${size}" height="${size}" ${a11y}>${body}</svg>`;
 }
 // old saved goals used emoji: map them to drawings
 export const EMOJI_TO_ICON = { '💎': 'gem', '💻': 'laptop', '✈️': 'plane', '🎧': 'headphones', '🚗': 'car', '🏠': 'house', '🎓': 'gradcap', '🛟': 'piggy', '🎁': 'gift', '🐉': 'chest' };

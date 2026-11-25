@@ -3,6 +3,7 @@
 // Everything here is drawn in SVG; accessories float around Yutu in her
 // 500×500 artboard space, so they line up with her canvas at any size.
 import { WEAR_ART } from './wear-art.js';
+import { MACHINE_ART, KNOB_ART, CAPSULE_TOP, CAPSULE_BOTTOM, CAPSULE_ART, BOX_ART, STICK_ART } from './magic-art.js';
 
 const L = '#6b4672';
 const SW = `stroke="${L}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
@@ -203,62 +204,27 @@ function hatch(id, d, gap = 7, ang = 45, op = .35, w = 1.3) {
 const screentone = (id, d, op = .3, size = 7) => `<pattern id="${id}p" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><circle cx="${size / 2}" cy="${size / 2}" r="1.3" fill="${INK}" fill-opacity="${op}"/></pattern><path d="${d}" fill="url(#${id}p)"/>`;
 const inkStar = (x, y, r) => `<path d="M${x} ${y - r}Q${x + r * .16} ${y - r * .16} ${x + r} ${y}Q${x + r * .16} ${y + r * .16} ${x} ${y + r}Q${x - r * .16} ${y + r * .16} ${x - r} ${y}Q${x - r * .16} ${y - r * .16} ${x} ${y - r}Z" fill="${INK}"/>`;
 
+// Magical-girl capsule machine (Quiver art in magic-art.js). Its parts keep the class names the
+// animations use: .machine-knob turns, .machine-caps shakes (origins set in styles.css).
+let artSeq = 0;
+const uniq = svg => { const u = `m${++artSeq}_`; return svg.replace(/(id="|url\(#|href="#)/g, `$1${u}`); };
+const CAP_SPOTS = [[150, 262, 0], [192, 268, 60], [234, 266, 140], [272, 258, 210], [170, 230, 250], [212, 232, 300], [252, 226, 30], [196, 198, 180], [236, 196, 100]];
 export function machineSVG() {
-  const caps = [[150, 128, 0], [207, 104, 1], [262, 128, 2], [180, 172, 3], [238, 178, 4], [290, 170, 1], [134, 186, 2]];
-  const capFill = ['var(--mm-pink-soft, #f3e2e5)', '#fff', 'var(--accent-soft, #f1e3e6)', 'var(--mm-pink, #d9a7b0)', '#fff'];
-  const globe = wobCircle(210, 150, 120, 3, 1.8, 48);
-  const body = wobPoly([[110, 262], [310, 262], [330, 440], [90, 440]], 5, 1.6);
-  const band = wobPoly([[94, 240], [326, 240], [326, 264], [94, 264]], 8, 1.2, 8);
-  const chute = wobPoly([[236, 384], [294, 384], [294, 426], [236, 426]], 9, 1.2);
-  const knob = wobCircle(210, 330, 34, 11, 1.4, 28);
-  const handle = wobPoly([[200, 300], [220, 300], [220, 360], [200, 360]], 12, 1, 5);
-  return `<svg class="machine machine-ink" data-no-ink viewBox="0 0 420 470" role="img" aria-label="Capsule machine">
-    <defs></defs>
-    <!-- ground shading -->
-    <path d="M86 452q60 -5 124 -2t128 1M110 461q50 -3 100 -1" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
-    <!-- body -->
-    ${inked(body, '#fff')}
-    ${hatch('mh1', 'M111 263L168 263L158 439L92 439Z', 8, 60, .3)}
-    ${screentone('mt1', 'M240 280h80l12 156h-92z', .28)}
-    ${pencil(body)}
-    <!-- glass globe with capsules -->
-    ${inked(globe, '#fff')}
-    <g class="machine-caps">${caps.map(([x, y, c], n) => {
-      const cap = wobCircle(x, y, 24, 20 + n, 1, 22), top = `M${x - 24} ${y}A24 24 0 0 1 ${x + 24} ${y}Z`;
-      return `<g>${inked(cap, '#fff', 2.4)}<path d="${top}" fill="${capFill[c]}"/>${c === 3 ? hatch('mc' + n, top, 5, 30, .3, 1) : ''}${inked(cap, 'none', 2.4)}
-        <path d="M${x - 23} ${y + 1}q12 -2 23 0t23 -1" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M${x - 12} ${y - 12}q4 -5 10 -6" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></g>`;
-    }).join('')}</g>
-    ${screentone('mt2', `M300 110A120 120 0 0 1 250 262L330 262L330 110Z`, .18)}
-    <path d="M118 96q18 -44 76 -66" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".95"/>
-    <path d="M128 112q4 -10 10 -17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-    <path d="M300 214q14 -22 18 -52" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
-    ${pencil(globe, 2, -1.5)}
-    <!-- collar -->
-    ${inked(band, 'var(--mm-pink, #d9a7b0)')}
-    ${hatch('mh2', band, 5, 30, .25, 1)}
-    <!-- knob, with little manga motion marks -->
-    <g class="machine-knob">${inked(knob, '#fff')}${inked(handle, 'var(--mm-pink-soft, #f3e2e5)', 2.6)}</g>
-    <path d="M160 300q-8 12 -6 28M156 340q2 10 8 18M260 300q8 12 6 28M264 340q-2 10 -8 18" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-    <!-- prize chute -->
-    ${inked(chute, '#fff', 2.6)}
-    ${hatch('mh3', wobPoly([[244, 394], [286, 394], [286, 416], [244, 416]], 14, .8), 4, 45, .55, 1.2)}
-    <!-- hand-lettered sign -->
-    <text x="146" y="414" font-size="27" font-family="var(--hand, 'Hachi Maru Pop'), cursive" fill="${INK}" transform="rotate(-4 170 405)">ガチャ</text>
-    <path d="M144 422q30 4 62 -2" fill="none" stroke="var(--mm-pink-deep, #b47885)" stroke-width="2.2" stroke-linecap="round"/>
-    <!-- sparkles -->
-    ${inkStar(54, 62, 13)}${inkStar(372, 92, 9)}${inkStar(362, 300, 7)}${inkStar(70, 300, 5)}
-    <g fill="var(--mm-pink, #d9a7b0)"><circle cx="390" cy="140" r="4"/><circle cx="40" cy="120" r="3"/></g>
+  // machine drawing (512 space) → 420×470: its knob socket lands on (210, 330), its globe centre near (210, 184)
+  const caps = CAP_SPOTS.map(([x, y, hue]) => `<g transform="translate(${x - 21} ${y - 21}) scale(.112)" style="filter:hue-rotate(${hue}deg)">${uniq(CAPSULE_ART)}</g>`).join('');
+  return `<svg class="machine machine-magic" data-no-ink viewBox="0 0 420 470" role="img" aria-label="Capsule machine" fill="none">
+    <defs><clipPath id="globe-clip"><circle cx="210" cy="184" r="104"/></clipPath></defs>
+    <g transform="translate(-26.4 -5) scale(.923)">${uniq(MACHINE_ART)}</g>
+    <g class="machine-caps" clip-path="url(#globe-clip)">${caps}</g>
+    <g class="machine-knob"><g transform="translate(179.5 299.5) scale(.148)"><g transform="translate(-48.9 -35.5)">${uniq(KNOB_ART)}</g></g></g>
   </svg>`;
 }
-export function capsuleSVG(color = '#ffc2d9') {
-  const top = 'M14 60a46 46 0 0 1 92 0z', bottom = 'M14 60h92a46 46 0 0 1-92 0z';
-  const outline = wobCircle(60, 60, 46, 4, 1.3, 32);
-  return `<svg class="capsule capsule-ink" data-no-ink viewBox="0 0 120 120" aria-hidden="true">
-    <g class="cap-top">${inked(wobPoly([[14, 60], [30, 26], [60, 14], [90, 26], [106, 60]], 2, 1, 5), 'var(--mm-pink-soft, #f3e2e5)', 2.6)}
-      ${hatch('ch', top, 6, 30, .25, 1.1)}<path d="M34 38q6 -9 16 -13" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>
-    <g class="cap-bottom">${inked(wobPoly([[14, 60], [106, 60], [90, 94], [60, 106], [30, 94]], 3, 1, 5), '#fff', 2.6)}${screentone('ct', bottom, .22, 6)}</g>
-    ${pencil(outline, 1.5, -1)}
+export function capsuleSVG() {
+  // the capsule drawing split into its top dome and bottom half, so it can pop open
+  const fit = 'translate(-1.1 -1.7) scale(.244)';
+  return `<svg class="capsule capsule-magic" data-no-ink viewBox="0 0 120 120" aria-hidden="true" fill="none">
+    <g class="cap-bottom"><g transform="${fit}">${uniq(CAPSULE_BOTTOM)}</g></g>
+    <g class="cap-top"><g transform="${fit}">${uniq(CAPSULE_TOP)}</g></g>
   </svg>`;
 }
 
@@ -280,23 +246,10 @@ export const fortuneFor = dateStr => {
   return Math.abs(h) % FORTUNES.length;
 };
 export function omikujiBoxSVG() {
-  const box = wobPoly([[30, 44], [110, 44], [110, 150], [30, 150]], 21, 1.1);
-  const roof = wobPoly([[24, 46], [70, 16], [116, 46]], 22, 1, 6);
-  const label = wobPoly([[52, 64], [88, 64], [88, 130], [52, 130]], 23, .8, 5);
-  const stick = wobPoly([[64, 2], [76, 2], [76, 36], [64, 36]], 24, .6, 4);
-  return `<svg class="omikuji-box omikuji-ink" data-no-ink viewBox="0 0 140 160" aria-hidden="true">
-    <g class="stick">${inked(stick, '#fff', 2)}<path d="M66 10h8" stroke="var(--mm-pink-deep, #b47885)" stroke-width="2" stroke-linecap="round"/></g>
-    ${inked(box, '#fff', 2.4)}
-    <!-- wood grain, drawn with a pen -->
-    <path d="M36 60q4 30 0 60M42 52q3 40 -2 90M98 56q-4 34 2 84M104 70q-2 30 0 60" fill="none" stroke="${INK}" stroke-width="1" stroke-linecap="round" opacity=".35"/>
-    ${hatch('oh', 'M30 120h80v30H30z', 5, 45, .3, 1)}
-    ${inked(roof, 'var(--mm-pink, #d9a7b0)', 2.4)}
-    ${hatch('or', 'M24 46L70 16L116 46Z', 4.5, 20, .28, 1)}
-    ${inked(label, '#fff', 1.8)}
-    <text x="70" y="90" text-anchor="middle" font-size="18" fill="${INK}" font-family="var(--title)">お</text>
-    <text x="70" y="116" text-anchor="middle" font-size="18" fill="${INK}" font-family="var(--title)">み</text>
-    ${pencil(box, 1.2, -1)}
-    ${inkStar(120, 30, 7)}${inkStar(20, 78, 5)}<circle cx="18" cy="40" r="2.5" fill="var(--mm-pink, #d9a7b0)"/>
+  // magical fortune box (Quiver art); the stick peeks out of the top and slides up when shaken (.stick)
+  return `<svg class="omikuji-box omikuji-magic" data-no-ink viewBox="0 0 140 160" aria-hidden="true" fill="none">
+    <g class="stick"><g transform="translate(84 2) scale(.42 .12)"><g transform="translate(-244.5 -6.5)">${uniq(STICK_ART)}</g></g></g>
+    <g transform="translate(-4.3 14.4) scale(.29)">${uniq(BOX_ART)}</g>
   </svg>`;
 }
 

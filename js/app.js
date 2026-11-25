@@ -1362,6 +1362,11 @@ document.addEventListener('pointerdown', e => {
 
 /* ================= Yutu ================= */
 initYutu({ say: line => { const b = $('.hero .bubble'); if (b) b.textContent = line; } });
+// the tab bar and settings button are in index.html: swap their icons for the magical-girl charms
+document.querySelectorAll('.tabbar svg.ic, .topbar svg.ic').forEach(svg => {
+  const name = [...svg.classList].find(c => c.startsWith('ic-'))?.slice(3);
+  if (name) svg.outerHTML = icon(name, +svg.getAttribute('width') || 24);
+});
 
 /* ================= boot ================= */
 async function boot() {

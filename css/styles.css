@@ -1971,3 +1971,171 @@ svg.machine-ink, svg.capsule-ink, svg.omikuji-ink { filter: none; overflow: visi
 .ward-preview.bao-preview { width: 100%; max-width: 340px; background: none; padding: 0; }
 /* Quiver-drawn accessory pictures are already hand-inked and coloured: no ink filter or desaturation */
 .ward-item svg.qv { filter: none; }
+
+/* =====================================================================
+   MAGICAL GIRL — the final look: a pastel sky with sparkles, gold-trimmed
+   lace cards, jewel buttons, a ribbon month banner and a gem tab bar, to
+   match Yutu and Bao. (final layer; palettes still set the accent)
+   ===================================================================== */
+:root {
+  --mg-plum: #6b4672; --mg-plum-2: #8d6a93; --mg-plum-3: #b39cb8;
+  --mg-pink: #ff9cc7; --mg-pink-2: #ffc6de; --mg-pink-3: #ffe8f2;
+  --mg-lav: #c8b2ff; --mg-lav-2: #e6dcff; --mg-mint: #a8ead3; --mg-mint-2: #dcf7ee;
+  --mg-gold: #f2c96d; --mg-gold-2: #fff0c4;
+  --mg-trim: 0 0 0 2px #fff, 0 0 0 4px var(--mg-gold-2), 0 0 0 5.5px var(--mg-gold);
+  --mg-glow: 0 14px 30px rgba(200, 120, 190, .25);
+  --mm-ink: #6b4672; --ic-line: #6b4672; --mm-paper: #fffafd;
+  --text: #5a3f60; --text-2: #8d6a93; --text-3: #b39cb8;
+  --font: 'M PLUS Rounded 1c', 'Zen Maru Gothic', system-ui, sans-serif;
+  --title: 'Mochiy Pop One', 'M PLUS Rounded 1c', sans-serif;
+  --hand: 'Hachi Maru Pop', cursive;
+}
+html, body { background:
+    radial-gradient(circle at 12% 8%, rgba(255,255,255,.9) 0 2px, transparent 3px) 0 0 / 90px 90px,
+    radial-gradient(circle at 70% 40%, rgba(255,255,255,.8) 0 1.5px, transparent 2.5px) 0 0 / 70px 70px,
+    radial-gradient(circle at 40% 80%, rgba(255,240,196,.9) 0 1.5px, transparent 2.5px) 0 0 / 110px 110px,
+    linear-gradient(160deg, #ffe3f1 0%, #efe2ff 45%, #dff6f0 100%) fixed !important; }
+body { font-family: var(--font); font-weight: 700; color: var(--text); }
+body::before, body::after { display: none !important; }
+h1, h2, h3, .brand, #month-label, .dialog-head h2, .card h2, .tile .value, .day-head, .streak .num, .sfx, .tile-sfx, .hero-moon .pct, .w52-b {
+  font-family: var(--title); font-weight: 400; }
+.btn, .chip, .tabbar button, .field > span, .field input, .field select, .tx .what, .tx .amt, .legend li, .toast, .tooltip, .demo-banner, .brand small, #month-label small {
+  font-family: var(--font); font-weight: 700; }
+.bubble { font-family: var(--hand); font-weight: 400; }
+
+/* no more pen frames, grain or ink wobble */
+.card, dialog, .tile, .goal, .tx, .cake, .wish, .split-jar, .debt-compare > div, .insights li, .reminders li, .toast, .tooltip,
+.month-nav, .tabbar, .bubble, .demo-banner, .fortune-slip, .legend li { border: 0 !important; border-image: none !important; }
+.ic, .tile .label .ic, .tabbar .ic, .ward-item svg, .cake .ic, svg.inked, svg.inked-lg, .donut-ink .donut-slices, .friend-hearts .hh { filter: none !important; }
+.ic.qv { overflow: visible; }
+
+/* header: a compact-mirror moon and a gradient name */
+.brand-moon { background: radial-gradient(circle at 35% 30%, #fff 0 18%, var(--mg-pink-2) 40%, var(--mg-pink) 100%) !important;
+  box-shadow: 0 0 0 3px var(--mg-gold-2), 0 0 0 5px var(--mg-gold), 0 0 0 7px #fff, 0 6px 16px rgba(255, 140, 190, .45) !important; filter: none !important; }
+.brand b { background: linear-gradient(90deg, #ff7fb6, #a98bff); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+.brand small { color: var(--mg-plum-2); letter-spacing: .25em; }
+.icon-btn { border-radius: 50%; color: #fff; background: linear-gradient(180deg, #dccbff, #b89cff 55%, #9d7ff5) !important;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.6), 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold), 0 6px 14px rgba(157,127,245,.4) !important; }
+.icon-btn .ic { filter: drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
+
+/* month: a pink ribbon banner */
+.month-nav { background: linear-gradient(180deg, #ff9fca, #f77fb5) !important; border-radius: 14px; color: #fff;
+  box-shadow: 0 6px 14px rgba(247, 127, 181, .35) !important; }
+.month-nav .icon-btn { background: rgba(255, 255, 255, .35) !important; box-shadow: none !important; }
+#month-label { color: #fff; text-shadow: 0 1px 0 rgba(160, 40, 100, .3); }
+#month-label small { background: var(--mg-gold) !important; color: #7a5410; border-radius: 99px; text-shadow: none; }
+.demo-banner { background: rgba(255, 255, 255, .75) !important; color: var(--mg-plum-2); border-radius: 18px;
+  box-shadow: 0 0 0 2px var(--mg-pink-2) !important; }
+
+/* cards: lace-edged, gold-trimmed */
+.card, dialog { background-color: var(--mm-paper); border-radius: 30px; box-shadow: var(--mg-trim), var(--mg-glow) !important; }
+.card:not(.hero):not(.hoard-hero)::after { content: none; }
+.card::before, .card:nth-of-type(even)::before, .grid-2 .card:nth-child(2)::before {
+  content: ''; position: absolute; left: 22px; right: 22px; top: -9px; height: 12px; opacity: 1; inset: -9px 22px auto 22px;
+  background: radial-gradient(circle at 8px 12px, #fff 0 7px, transparent 7.5px) 0 0 / 16px 12px repeat-x !important;
+  filter: drop-shadow(0 -1px 0 var(--mg-pink-2)); pointer-events: none; }
+.card h2 { background: none !important; border: 0; padding: 0 0 8px; color: var(--mg-plum); font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
+.card h2::before { content: '' !important; display: inline-block; flex: none; width: 26px; height: 20px; background: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24'%3E%3Cpath d='M16 12C10 4 3 5 3 12s7 8 13 0zM16 12c6-8 13-7 13 0s-7 8-13 0z' fill='%23ffb3d4' stroke='%236b4672' stroke-width='1.4' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='12' r='3.2' fill='%23ff86bb' stroke='%236b4672' stroke-width='1.3'/%3E%3Cpath d='M14 15l-3 7M18 15l3 7' stroke='%236b4672' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-size: contain !important; background-repeat: no-repeat !important; position: static; transform: none; box-shadow: none; }
+.card h2[data-jp]::after { color: #f07aae; font-family: var(--font); font-size: .7rem; letter-spacing: .2em; }
+.card-head h2 { flex: 1; }
+
+/* hero: moonlit sky with a glowing halo behind Yutu */
+.hero, .hoard-hero { background-image:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 255, .95) 0 20%, rgba(255, 220, 238, .55) 38%, transparent 60%),
+    linear-gradient(180deg, #ffd3e8, #eadcff 62%, var(--mm-paper)) !important; background-size: auto !important; }
+.hero::after, .hoard-hero::after { background: repeating-conic-gradient(from 0deg at 50% 40%, rgba(255,255,255,.55) 0deg 2deg, transparent 2deg 14deg) !important; opacity: .7; }
+.speedlines { display: none; }
+.petals i { color: var(--mg-pink); opacity: .9; }
+.hero-text h1 { color: var(--mg-plum); }
+.sfx { color: #fff !important; -webkit-text-stroke: 1.4px #f07aae; }
+.sfx-b { color: #f07aae !important; }
+.bubble { background: #fff !important; border-radius: 22px; box-shadow: 0 0 0 2px var(--mg-pink-2), 0 6px 16px rgba(255, 140, 190, .3) !important; }
+.hero-moon .pct { color: #f07aae; }
+
+/* tiles: little gem cards in four pastels */
+.tile, .goal, .tx, .cake, .wish, .split-jar, .debt-compare > div, .insights li, .reminders li {
+  border-radius: 22px; background: #fff; box-shadow: inset 0 0 0 2px var(--mg-pink-3), 0 6px 14px rgba(200, 140, 200, .16) !important; }
+.tiles .tile:nth-child(4n+1) { background: linear-gradient(160deg, #fff, var(--mg-pink-3)) !important; }
+.tiles .tile:nth-child(4n+2) { background: linear-gradient(160deg, #fff, var(--mg-lav-2)) !important; }
+.tiles .tile:nth-child(4n+3) { background: linear-gradient(160deg, #fff, var(--mg-mint-2)) !important; }
+.tiles .tile:nth-child(4n+4) { background: linear-gradient(160deg, #fff, var(--mg-gold-2)) !important; }
+.tile .label { color: var(--mg-plum-2); }
+.tile .value { color: var(--mg-plum); font-size: 1.45rem; }
+.tile-sfx { color: rgba(255, 156, 199, .35); -webkit-text-stroke: 0; }
+
+/* jewel buttons */
+.btn { border-radius: 999px; position: relative; letter-spacing: .03em; }
+.btn.primary, .fab { color: #fff !important; background: linear-gradient(180deg, #ffb3d4 0%, #ff86bb 55%, #f46aa6 100%) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .65), inset 0 -3px 0 rgba(180, 40, 110, .22), 0 0 0 2.5px #fff, 0 0 0 4.5px var(--mg-gold), 0 8px 18px rgba(244, 106, 166, .45) !important;
+  text-shadow: 0 1px 0 rgba(180, 40, 110, .35); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.jade { color: #2f6b58 !important; background: linear-gradient(180deg, #c9f5e6, #8fe0c4 55%, #6fd0ae) !important;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.7), inset 0 -3px 0 rgba(30,110,80,.18), 0 0 0 2.5px #fff, 0 0 0 4.5px var(--mg-gold), 0 8px 18px rgba(111,208,174,.4) !important; }
+.btn.ghost, .btn.danger { background: #fff !important; color: var(--mg-plum) !important; box-shadow: inset 0 0 0 2px var(--mg-lav-2), 0 4px 10px rgba(200,140,200,.15) !important; }
+.btn.danger { color: #d0457f !important; }
+.fab { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 10%, #ffb3d4 35%, #f46aa6 100%) !important;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5.5px var(--mg-gold), 0 0 22px rgba(255, 130, 190, .7) !important; }
+
+/* chips, fields, bars */
+.chip { background: #fff; border: 0 !important; box-shadow: inset 0 0 0 2px var(--mg-lav-2); color: var(--mg-plum); border-radius: 99px; }
+.chip:hover { background: var(--mg-pink-3); }
+.chip[aria-checked=true], .chip[aria-pressed=true] { color: #fff !important; background: linear-gradient(180deg, #c9b4ff, #a98bff) !important;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold), 0 4px 10px rgba(169, 139, 255, .45) !important; }
+.chip[aria-checked=true] .ic, .chip[aria-pressed=true] .ic { filter: none !important; }
+.field input, .field select, .budget-edit input[type=number], .budget-edit .field input {
+  border: 0 !important; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px var(--mg-lav-2) !important; color: var(--mg-plum); }
+.field input:focus, .field select:focus { box-shadow: inset 0 0 0 2px var(--mg-pink), 0 0 0 4px var(--mg-pink-3) !important; }
+.bar { background: #fff !important; border-radius: 99px; box-shadow: inset 0 0 0 2px var(--mg-pink-2) !important; }
+.bar > span, .bar.gold > span { border-radius: 99px; background: linear-gradient(90deg, #ffb3d4, #c8b2ff, #a8ead3) !important; box-shadow: inset 0 2px 0 rgba(255,255,255,.6) !important; }
+.seg { background: var(--mg-lav-2); border-radius: 99px; }
+.w52-b { border: 0 !important; box-shadow: inset 0 0 0 2px var(--mg-lav-2); border-radius: 99px; background: #fff; }
+.w52-b.on { color: #fff; background: linear-gradient(180deg, #ffb3d4, #ff86bb) !important; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold); }
+.hm-cell, .hm-legend i { border: 0 !important; border-radius: 10px; box-shadow: inset 0 0 0 2px var(--mg-pink-3); }
+.hm-cell.today { box-shadow: 0 0 0 2px var(--mg-gold) !important; }
+
+/* tab bar: gold-trimmed, the current tab glows like a gem */
+.tabbar { border-radius: 34px; background: rgba(255, 255, 255, .92) !important; backdrop-filter: blur(6px);
+  box-shadow: var(--mg-trim), 0 12px 26px rgba(200, 120, 190, .35) !important; }
+.tabbar button { color: var(--mg-plum-2); }
+.tabbar button[aria-current=page] { color: #f05fa0; background: none !important; }
+.tabbar button[aria-current=page]::before { content: none !important; }
+.tabbar button[aria-current=page] .ic { border-radius: 50%; padding: 3px; background: linear-gradient(180deg, #ffd0e5, #ff9cc7);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold), 0 0 14px rgba(255, 130, 190, .8); }
+
+/* gacha, fortune, wardrobe and little bits */
+.machine-wrap { max-width: 280px; }
+.machine .machine-knob { transform-origin: 210px 330px; }
+.machine.turning .machine-caps { transform-origin: 210px 184px; }
+.machine-magic, .omikuji-magic, .capsule-magic { overflow: visible; filter: drop-shadow(0 8px 14px rgba(200, 120, 190, .3)); }
+.omikuji-box { width: 130px; }
+.fortune-slip { background: #fff !important; border-radius: 20px; box-shadow: var(--mg-trim), var(--mg-glow) !important; }
+.fortune-slip::before { content: none; }
+.fortune-rank { color: #f07aae; }
+.ticket-count { background: var(--mg-gold-2) !important; color: #7a5410; border-radius: 99px; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold) !important; }
+.ward-item { background: #fff !important; border: 0 !important; border-radius: 22px; box-shadow: inset 0 0 0 2px var(--mg-pink-3), 0 6px 14px rgba(200, 140, 200, .16); }
+.ward-item.r2 { background: linear-gradient(160deg, #fff, var(--mg-lav-2)) !important; }
+.ward-item.r3 { background: linear-gradient(160deg, #fff, var(--mg-gold-2)) !important; }
+.ward-item.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--mg-gold), 0 6px 16px rgba(255, 140, 190, .4) !important; }
+.wi-stars { color: var(--mg-gold); }
+.lv, .friend-lv, .pill.trial { background: var(--mg-pink-3) !important; color: #d0457f !important; border-radius: 99px; }
+.legend li { background: #fff !important; border-radius: 99px; box-shadow: inset 0 0 0 2px var(--mg-pink-3); }
+.donut-ink .seg, .donut-ink .donut-heart-bg, .donut-ink .donut-heart { stroke: #fff; stroke-width: 2; }
+.donut-ink .donut-center .big { fill: var(--mg-plum); }
+.toast, .tooltip { background: linear-gradient(180deg, #a98bff, #8d6ff0) !important; color: #fff !important; border-radius: 18px; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold), 0 8px 22px rgba(157, 127, 245, .45) !important; }
+.friend-hearts .hh path { stroke: var(--mg-plum); }
+.friend-hearts i.on .hh path:first-child { fill: var(--mg-pink); }
+dialog::backdrop { background: rgba(200, 160, 230, .35) !important; backdrop-filter: blur(3px); }
+:focus-visible { outline: 2px solid #f07aae; outline-offset: 3px; }
+/* corner decoration: stars, hearts and a crescent instead of ink flowers */
+:root { --mm-flowers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 120'%3E%3Cg stroke='%236b4672' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M104 30a22 22 0 1 0 14 38 17 17 0 1 1-14-38z' fill='%23fff0c4'/%3E%3Cpath d='M58 70c-8-6-14-10-14-16 0-4 3-7 7-7 3 0 5 2 7 4 2-2 4-4 7-4 4 0 7 3 7 7 0 6-6 10-14 16z' fill='%23ffb3d4'/%3E%3Cpath d='M128 88l3 8 8 3-8 3-3 8-3-8-8-3 8-3z' fill='%23f2c96d'/%3E%3Cpath d='M30 92l2 6 6 2-6 2-2 6-2-6-6-2 6-2z' fill='%23c8b2ff'/%3E%3Cpath d='M84 98l2 5 5 2-5 2-2 5-2-5-5-2 5-2z' fill='%23a8ead3'/%3E%3C/g%3E%3Ccircle cx='70' cy='30' r='3' fill='%23ffc6de'/%3E%3Ccircle cx='140' cy='50' r='2.5' fill='%23f2c96d'/%3E%3C/svg%3E"); }
+/* the prize sits in a glowing gold-ringed medallion */
+.reveal-item { background: radial-gradient(circle, #fff 0 56%, var(--mg-pink-3) 57% 66%, transparent 67%),
+    repeating-conic-gradient(from 0deg, rgba(255, 200, 225, .45) 0 10deg, transparent 10deg 20deg) !important;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--mg-gold), 0 0 26px rgba(255, 150, 200, .55) !important; }
+.gacha-reveal.r2 .reveal-item { background: radial-gradient(circle, #fff 0 56%, var(--mg-lav-2) 57% 66%, transparent 67%),
+    repeating-conic-gradient(from 0deg, rgba(200, 178, 255, .45) 0 10deg, transparent 10deg 20deg) !important; }
+.gacha-reveal.r3 .reveal-item { background: radial-gradient(circle, #fff 0 56%, var(--mg-gold-2) 57% 66%, transparent 67%),
+    repeating-conic-gradient(from 0deg, rgba(242, 201, 109, .5) 0 10deg, transparent 10deg 20deg) !important; }
+.reveal-stars { color: var(--mg-gold); }

@@ -83,7 +83,7 @@ export const ITEMS = [
 export const SLOTS = [
   { id: 'top', name: 'Crowns' }, { id: 'neck', name: 'Necklaces' }, { id: 'eyes', name: 'Glasses' }, { id: 'buddy', name: 'Buddies' }, { id: 'aura', name: 'Auras' }, { id: 'back', name: 'Backdrops' },
 ];
-// what Yutu wears in her .riv for the items equipped (her moon gem and ribbon collar when nothing is chosen)
+// what Yutu wears in her .riv for the items equipped (her bow and jade beads when nothing is chosen)
 export function outfitFor(equipped = {}) {
   const r = slot => itemById(equipped[slot])?.rive || {};
   return { hat: r('top').hat ?? 1, neck: r('neck').neck ?? 1, eyewear: r('eyes').eyewear ?? 0 };

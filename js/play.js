@@ -1,4 +1,3 @@
-import { WEAR_ART } from './wear-art.js';
 // Moonbun Money — play features: gacha wardrobe, omikuji, friendship hearts,
 // savings plants, diary stickers, Yutu's monthly letter and soft sounds.
 // Everything here is drawn in SVG; accessories float around Yutu in her

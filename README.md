@@ -77,6 +77,24 @@ Goals can also have a **Needed by** date. Yutu then tells you how much to save e
 
 Receipt photos are shrunk before saving so they fit in the database.
 
+## Receipt scanner 📷
+
+Tap **Scan receipt** (History tab) or **Scan a receipt instead** (in the add dialog) and hold a receipt up to your phone camera. When the picture is steady and sharp it snaps the photo by itself (or tap **Scan now**, or **Use a photo**). Claude reads the store, date, total and every item with a budget category; you check it, then log it item by item or as one total. Tax and discounts are shared across the items so they add up to what you paid, and the receipt photo is saved with the first entry.
+
+The reading happens in a small Firebase Cloud Function (`functions/index.js`), so your Anthropic API key stays on the server and never goes into the app. One-time setup:
+
+1. **Upgrade Firebase to the Blaze plan.** Cloud Functions need it. In the [Firebase console](https://console.firebase.google.com/) open your project → ⚙️ → **Usage and billing** → **Modify plan**. A small app like this stays inside the free allowance, and you can set a budget alert there.
+2. **Get an Anthropic API key** at [platform.claude.com](https://platform.claude.com/) → **API keys** → **Create key**, and add a little credit under **Billing**. Keep the key private: don't paste it into chats, GitHub or the app.
+3. **In Terminal, from this folder**, sign in to Firebase, install the function's packages, store the key as a secret (paste it when asked; it isn't shown) and deploy:
+   ```bash
+   firebase login
+   cd functions && npm install && cd ..
+   firebase functions:secrets:set ANTHROPIC_API_KEY
+   firebase deploy --only functions
+   ```
+
+Each scan is one Claude Opus 5.5 request with one photo: roughly 2-4 US cents. Only signed-in users can call the function, and it handles at most 5 scans at the same time. The scanner needs the signed-in app; in demo mode it shows a sample receipt so you can try the flow.
+
 ## Making changes later
 
 Whenever you edit files, bump the version in `sw.js` (`moonbun-v2` → `moonbun-v3`, and so on) so phones load the new version.

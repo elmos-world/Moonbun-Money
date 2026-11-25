@@ -56,6 +56,14 @@ function localStore({ onData, onAuth }) {
     async deleteGoal(id) { state.goals = state.goals.filter(g => g.id !== id); emit(); },
     async saveSettings(patch) { state.settings = withDefaults({ ...state.settings, ...patch }); emit(); },
     async signOut() {},
+    // demo mode has no cloud: the scanner shows a sample receipt so the flow can be tried
+    async scanReceipt() {
+      await new Promise(r => setTimeout(r, 1400));
+      return { isReceipt: true, demo: true, merchant: 'Sample Mart (demo)', date: new Date().toISOString().slice(0, 10), currency: null,
+        items: [{ name: 'Strawberry milk', amount: 2.49, category: 'food' }, { name: 'Onigiri', amount: 1.99, category: 'food' },
+          { name: 'Sticker sheet', amount: 3.5, category: 'fun' }, { name: 'Lip balm', amount: 4.25, category: 'selfcare' }],
+        subtotal: 12.23, tax: 0.98, total: 13.21 };
+    },
   };
 }
 
@@ -108,5 +116,11 @@ async function cloudStore({ onData, onAuth }) {
     signInGoogle: () => authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider()),
     resetPassword: email => authMod.sendPasswordResetEmail(auth, email),
     signOut: () => authMod.signOut(auth),
+    // receipt scanner: Claude reads the photo in the scanReceipt Cloud Function (functions/index.js)
+    scanReceipt: async (image, mediaType = 'image/jpeg') => {
+      const fnMod = await import(`${base}/firebase-functions.js`);
+      const call = fnMod.httpsCallable(fnMod.getFunctions(app), 'scanReceipt', { timeout: 120000 });
+      return (await call({ image, mediaType, today: new Date().toISOString().slice(0, 10) })).data;
+    },
   };
 }

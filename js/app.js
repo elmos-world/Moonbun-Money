@@ -1,3 +1,4 @@
+import { openScanner } from './scanner.js';
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
 import { initYutu, yutuReact, yutuDress } from './yutu.js';
@@ -474,7 +475,7 @@ function baoPlayHTML(t) {
   <section class="card play-hero" aria-labelledby="bao-gacha-title">
     <div class="card-head"><h2 id="bao-gacha-title" data-jp="宝ガチャ">Bao’s treasure capsules</h2><span class="ticket-count">${icon('ticket', 24)} <b>${t}</b> moon ${t === 1 ? 'ticket' : 'tickets'}</span></div>
     <div class="gacha-grid">
-      <div class="machine-wrap">${machineSVG()}</div>
+      <div class="machine-wrap">${machineSVG({ bao: true })}</div>
       <div>
         <p class="bubble left">A capsule for me too? Crowns, necklaces and glasses for a very fancy dragon (｀・ω・´)♡</p>
         <button class="btn primary big" data-action="gacha-bao" ${t ? '' : 'aria-disabled="true"'}>${icon('capsule', 22)} Turn Bao’s knob · 1 ticket</button>
@@ -567,10 +568,10 @@ function pullGacha(who = 'yutu') {
   ui.pending = it; ui.pendingWho = who;
   savePlay({ spent: (pl.spent || 0) + 1 });
   sound('roll');
-  $('.machine')?.classList.add('turning');
+  $(who === 'bao' ? '.machine-bao' : '.machine:not(.machine-bao)')?.classList.add('turning');
   setTimeout(() => {
     playDialog(`<div class="gacha-drop"><h2 id="play-title">A capsule rolled out!</h2>
-      <button class="cap-btn" data-action="open-capsule" aria-label="Open the capsule">${capsuleSVG(CAP_COLORS[Math.floor(Math.random() * CAP_COLORS.length)])}</button>
+      <button class="cap-btn" data-action="open-capsule" aria-label="Open the capsule">${capsuleSVG(CAP_COLORS[Math.floor(Math.random() * CAP_COLORS.length)], { bao: who === 'bao' })}</button>
       <p class="muted">Tap the capsule to open it ♡</p></div>`, 'gacha');
   }, calmMotion() ? 0 : 750);
 }
@@ -947,7 +948,7 @@ function viewHistory() {
   const groups = {};
   tx.forEach(t => (groups[t.date] ||= []).push(t));
   return `<section class="card" aria-labelledby="hist-title">
-    <div class="card-head"><h2 id="hist-title" data-jp="記録">History · ${monthLabel(ui.month)}</h2><span class="head-btns"><button class="btn small primary" data-action="open-import">${icon('upload', 18)} Import from bank</button><button class="btn small ghost" data-action="export">${icon('download', 18)} Export CSV</button></span></div>
+    <div class="card-head"><h2 id="hist-title" data-jp="記録">History · ${monthLabel(ui.month)}</h2><span class="head-btns"><button class="btn small primary" data-action="scan-receipt">${icon('bills', 18)} Scan receipt</button><button class="btn small primary" data-action="open-import">${icon('upload', 18)} Import from bank</button><button class="btn small ghost" data-action="export">${icon('download', 18)} Export CSV</button></span></div>
     <div class="chips" role="group" aria-label="Filter">${filters.map(([k, l]) => `<button class="chip" data-action="hist-filter" data-f="${k}" aria-pressed="${ui.histFilter === k}">${l}</button>`).join('')}</div>
     ${tx.length ? Object.entries(groups).map(([d, list]) => `
       <div class="day-head"><span>${fmtDate(d)} ${(() => { const e = play().diary?.[d], k = e && stickerById(e.s); return k ? `<span class="day-sticker">${k.svg}</span>${e.n ? `<i class="day-note">“${esc(e.n)}”</i>` : ''}` : ''; })()}</span><span>${sum(list.filter(t => t.type === 'expense')) ? '−' + money(sum(list.filter(t => t.type === 'expense'))) : ''}</span></div>
@@ -1046,6 +1047,22 @@ function setTab(tab) {
   render();
   $('#view').focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: S.settings.reduceMotion ? 'auto' : 'smooth' });
+}
+
+/* ---------- receipt scanner (camera + Claude, see scanner.js and functions/index.js) ---------- */
+function startScan() {
+  if ($('#add-dialog').open) $('#add-dialog').close();
+  if (!store.scanReceipt) { toast('The receipt scanner needs the app to be signed in ✧'); return; }
+  openScanner({
+    cats: CATS, icon, money, esc, toast, today: todayStr, compress: compressImage,
+    scan: (image, type) => store.scanReceipt(image, type),
+    save: async txs => {
+      for (const t of txs) await fire(store.addTx({ id: uid(), type: 'expense', createdAt: new Date().toISOString(), ...t }));
+      ui.month = (txs[0]?.date || todayStr()).slice(0, 7);
+      toast(txs.length === 1 ? `Logged ${money(txs[0].amount)} from your receipt ♡` : `Logged ${txs.length} items from your receipt ♡`);
+      yutuReact('expense', { soft: true });
+    },
+  });
 }
 
 /* ---------- add dialog ---------- */
@@ -1199,6 +1216,7 @@ document.addEventListener('click', async e => {
     sound('chime'); toast('Your safety net is started! It shows up in Bao’s hoard too ♡');
   }
   else if (a === 'open-import') openImport();
+  else if (a === 'scan-receipt') startScan();
   else if (a === 'csv-import') { if (el.getAttribute('aria-disabled') !== 'true') doImport(); }
   else if (a === 'view-receipt') {
     const t = S.transactions.find(x => x.id === el.dataset.id); if (!t?.receipt) return;
@@ -1362,6 +1380,11 @@ document.addEventListener('pointerdown', e => {
 
 /* ================= Yutu ================= */
 initYutu({ say: line => { const b = $('.hero .bubble'); if (b) b.textContent = line; } });
+// lace sliders: the filled part of each slider's track follows its value (--fill)
+const rangeFill = el => el.style.setProperty('--fill', `${((el.value - (el.min || 0)) / ((el.max || 100) - (el.min || 0))) * 100}%`);
+document.addEventListener('input', e => { if (e.target.matches?.('input[type=range]')) rangeFill(e.target); });
+new MutationObserver(() => document.querySelectorAll('input[type=range]').forEach(rangeFill)).observe(document.body, { childList: true, subtree: true });
+document.querySelectorAll('input[type=range]').forEach(rangeFill);
 // the tab bar and settings button are in index.html: swap their icons for the magical-girl charms
 document.querySelectorAll('.tabbar svg.ic, .topbar svg.ic').forEach(svg => {
   const name = [...svg.classList].find(c => c.startsWith('ic-'))?.slice(3);

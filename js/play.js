@@ -3,6 +3,7 @@
 // Everything here is drawn in SVG; accessories float around Yutu in her
 // 500×500 artboard space, so they line up with her canvas at any size.
 import { WEAR_ART } from './wear-art.js';
+import { WEAR_MAGIC, WEAR_MAGIC_THUMB } from './wear-magic.js';
 import { MACHINE_ART, KNOB_ART, CAPSULE_TOP, CAPSULE_BOTTOM, CAPSULE_ART, BOX_ART, STICK_ART } from './magic-art.js';
 
 const L = '#6b4672';
@@ -84,6 +85,8 @@ export const ITEMS = [
 ];
 // Yutu's accessory pictures match the drawings she wears in her .riv
 for (const it of ITEMS) if (WEAR_ART[it.id]) Object.assign(it, WEAR_ART[it.id], { qv: true });
+// buddies, auras and backdrops in the magical-girl style (wear-magic.js); they keep their colours (no ink pass)
+for (const it of ITEMS) if (WEAR_MAGIC[it.id]) Object.assign(it, { art: WEAR_MAGIC[it.id], magic: true }, WEAR_MAGIC_THUMB[it.id] ? { thumbVb: WEAR_MAGIC_THUMB[it.id][0], thumbArt: WEAR_MAGIC_THUMB[it.id][1] } : {});
 
 // Bao's capsule machine: things he wears in his own .riv (bao.js). `art` is only the thumbnail.
 const INKC = '#2f2a33', ROSE = '#e8c4cc', SAGEC = '#cfe0d6', GOLDC = '#e8d3a0';
@@ -137,18 +140,18 @@ export const RARITY = { 1: { name: 'Cute', stars: '★' }, 2: { name: 'Rare', st
 
 let thumbSeq = 0;
 export function itemThumb(it, size = 72) {
-  const vb = it.thumb || '0 0 500 500';
+  const vb = it.thumbVb || it.thumb || '0 0 500 500';
   // Quiver pictures carry gradients: give every copy its own ids, or a hidden copy's ids break the visible one
-  const art = it.qv ? `<g fill="none">${it.art.replace(/(id="|url\(#|href="#)/g, `$1t${++thumbSeq}_`)}</g>` : it.art; // Quiver SVGs default to no fill
-  return `<svg class="pl-thumb${it.qv ? ' qv' : ''}" viewBox="${vb}" width="${size}" height="${size}" aria-hidden="true">${DEFS}${art}</svg>`;
+  const art = (it.qv || it.magic) ? `<g fill="none">${(it.thumbArt || it.art).replace(/(id="|url\(#|href="#)/g, `$1t${++thumbSeq}_`)}</g>` : (it.thumbArt || it.art); // Quiver SVGs default to no fill
+  return `<svg class="pl-thumb${it.qv || it.magic ? ' qv' : ''}" viewBox="${vb}" width="${size}" height="${size}" aria-hidden="true">${DEFS}${art}</svg>`;
 }
 // layers that sit behind and in front of Yutu's canvas
 export function wearLayers(equipped = {}) {
   const pick = slot => { const it = itemById(equipped[slot]); return it && !it.rive ? it : null; };
   const back = pick('back'), top = pick('top'), buddy = pick('buddy'), aura = pick('aura');
   return {
-    back: back ? `<svg class="wear wear-back" viewBox="0 0 500 500" aria-hidden="true">${DEFS}${back.art}</svg>` : '',
-    front: (top || buddy || aura) ? `<svg class="wear wear-front" viewBox="0 0 500 500" aria-hidden="true">${DEFS}
+    back: back ? `<svg class="wear wear-back" data-no-ink viewBox="0 0 500 500" aria-hidden="true">${DEFS}${back.art}</svg>` : '',
+    front: (top || buddy || aura) ? `<svg class="wear wear-front" data-no-ink viewBox="0 0 500 500" aria-hidden="true">${DEFS}
       ${aura ? `<g class="wear-aura">${aura.art}</g>` : ''}${top ? `<g class="wear-top">${top.art}</g>` : ''}${buddy ? `<g class="wear-buddy">${buddy.art}</g>` : ''}</svg>` : '',
   };
 }
@@ -209,22 +212,39 @@ const inkStar = (x, y, r) => `<path d="M${x} ${y - r}Q${x + r * .16} ${y - r * .
 let artSeq = 0;
 const uniq = svg => { const u = `m${++artSeq}_`; return svg.replace(/(id="|url\(#|href="#)/g, `$1${u}`); };
 const CAP_SPOTS = [[150, 262, 0], [192, 268, 60], [234, 266, 140], [272, 258, 210], [170, 230, 250], [212, 232, 300], [252, 226, 30], [196, 198, 180], [236, 196, 100]];
-export function machineSVG() {
+// Bao's machine and capsules: the same drawings with their pinks and lavenders turned to his pale red
+// (gold, white and mint stay as they are)
+function hexToRed(hex) {
+  const n = parseInt(hex, 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (d < .08) return hex;
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360;
+  if (h < 250 && h > 20) return hex;                       // golds, greens, blues: unchanged
+  const H = 3, S = Math.min(1, s * 1.2 + .15), L = l > .5 ? l * .9 : l;   // Bao's coral red
+  const c = (1 - Math.abs(2 * L - 1)) * S, x = c * (1 - Math.abs(((H / 60) % 2) - 1)), m = L - c / 2;
+  const [R, G, B] = H < 60 ? [c, x, 0] : [c, 0, x];
+  return [R, G, B].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+const redCache = new Map();
+const toRed = svg => { if (!redCache.has(svg)) redCache.set(svg, svg.replace(/#([0-9a-fA-F]{6})\b/g, (_, h) => '#' + hexToRed(h))); return redCache.get(svg); };
+export function machineSVG({ bao = false } = {}) {
   // machine drawing (512 space) → 420×470: its knob socket lands on (210, 330), its globe centre near (210, 184)
-  const caps = CAP_SPOTS.map(([x, y, hue]) => `<g transform="translate(${x - 21} ${y - 21}) scale(.112)" style="filter:hue-rotate(${hue}deg)">${uniq(CAPSULE_ART)}</g>`).join('');
-  return `<svg class="machine machine-magic" data-no-ink viewBox="0 0 420 470" role="img" aria-label="Capsule machine" fill="none">
+  // Bao's machine is red like him: his capsules stay in reds, corals and golds
+  const caps = CAP_SPOTS.map(([x, y, hue], i) => `<g transform="translate(${x - 21} ${y - 21}) scale(.112)" style="filter:hue-rotate(${bao ? [0, 8, -6, 14, 4, -10, 10, 0, 6][i] : hue}deg)">${uniq(bao ? toRed(CAPSULE_ART) : CAPSULE_ART)}</g>`).join('');
+  return `<svg class="machine machine-magic${bao ? ' machine-bao' : ''}" data-no-ink viewBox="0 0 420 470" role="img" aria-label="Capsule machine" fill="none">
     <defs><clipPath id="globe-clip"><circle cx="210" cy="184" r="104"/></clipPath></defs>
-    <g transform="translate(-26.4 -5) scale(.923)">${uniq(MACHINE_ART)}</g>
+    <g class="machine-body" transform="translate(-26.4 -5) scale(.923)">${uniq(bao ? toRed(MACHINE_ART) : MACHINE_ART)}</g>
     <g class="machine-caps" clip-path="url(#globe-clip)">${caps}</g>
-    <g class="machine-knob"><g transform="translate(179.5 299.5) scale(.148)"><g transform="translate(-48.9 -35.5)">${uniq(KNOB_ART)}</g></g></g>
+    <g class="machine-knob"><g transform="translate(179.5 299.5) scale(.148)"><g transform="translate(-48.9 -35.5)">${uniq(bao ? toRed(KNOB_ART) : KNOB_ART)}</g></g></g>
   </svg>`;
 }
-export function capsuleSVG() {
+export function capsuleSVG(_color, { bao = false } = {}) {
   // the capsule drawing split into its top dome and bottom half, so it can pop open
   const fit = 'translate(-1.1 -1.7) scale(.244)';
-  return `<svg class="capsule capsule-magic" data-no-ink viewBox="0 0 120 120" aria-hidden="true" fill="none">
-    <g class="cap-bottom"><g transform="${fit}">${uniq(CAPSULE_BOTTOM)}</g></g>
-    <g class="cap-top"><g transform="${fit}">${uniq(CAPSULE_TOP)}</g></g>
+  return `<svg class="capsule capsule-magic${bao ? ' capsule-bao' : ''}" data-no-ink viewBox="0 0 120 120" aria-hidden="true" fill="none">
+    <g class="cap-bottom"><g transform="${fit}">${uniq(bao ? toRed(CAPSULE_BOTTOM) : CAPSULE_BOTTOM)}</g></g>
+    <g class="cap-top"><g transform="${fit}">${uniq(bao ? toRed(CAPSULE_TOP) : CAPSULE_TOP)}</g></g>
   </svg>`;
 }
 

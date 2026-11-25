@@ -20,18 +20,18 @@ const sakura = (x, y, r, c = '#ffc2d9') => `<g transform="translate(${x} ${y})">
 /* `art` is drawn in Yutu's 500×500 space; `thumb` sets a viewBox crop. */
 /* ------------------------------------------------------------------ */
 export const ITEMS = [
-  // ---- crowns & halos (float above her head, left of her bow) ----
-  { id: 'sakura-crown', slot: 'top', rarity: 1, name: 'Sakura crown', thumb: '150 -20 160 110',
+  // ---- crowns & halos: worn on her head in her .riv (rive.hat); `art` is the thumbnail ----
+  { id: 'sakura-crown', slot: 'top', rive: { hat: 2 }, rarity: 1, name: 'Sakura crown', thumb: '150 -20 160 110',
     art: `<path d="M170 58c20-12 100-12 120 0" fill="none" stroke="#a6e8c4" stroke-width="7" stroke-linecap="round"/>${sakura(178, 50, 12)}${sakura(208, 38, 13, '#ffd3e6')}${sakura(240, 34, 14)}${sakura(272, 38, 13, '#ffd3e6')}${sakura(300, 50, 12)}` },
-  { id: 'flower-ring', slot: 'top', rarity: 1, name: 'Daisy halo', thumb: '150 -15 160 100',
+  { id: 'flower-ring', slot: 'top', rive: { hat: 4 }, rarity: 1, name: 'Daisy halo', thumb: '150 -15 160 100',
     art: `<ellipse cx="236" cy="40" rx="62" ry="14" fill="none" stroke="#bdf0d4" stroke-width="6"/>${[-55, -28, 0, 28, 55].map((d, i) => `<g transform="translate(${236 + d} ${40 + Math.abs(d) * -.08 + 10 * Math.cos(d / 30)})">${[0, 60, 120, 180, 240, 300].map(a => `<ellipse cx="0" cy="-8" rx="4.5" ry="8" fill="#fff" stroke="${L}" stroke-width="1.8" transform="rotate(${a})"/>`).join('')}<circle r="4.5" fill="#ffd166" stroke="${L}" stroke-width="1.6"/></g>`).join('')}` },
-  { id: 'cloud-puff', slot: 'top', rarity: 1, name: 'Cloud puff', thumb: '160 -30 160 110',
+  { id: 'cloud-puff', slot: 'top', rive: { hat: 5 }, rarity: 1, name: 'Cloud puff', thumb: '160 -30 160 110',
     art: `<path d="M190 52c-16 0-22-20-6-26 0-18 24-24 34-10 8-16 36-14 40 4 18-2 26 22 10 30z" fill="#fff" ${SW}/>${face(236, 38, 9)}<path d="M206 62v10M236 64v14M266 62v10" stroke="#8fd3ff" stroke-width="4" stroke-linecap="round"/>` },
-  { id: 'star-tiara', slot: 'top', rarity: 2, name: 'Star tiara', thumb: '160 -25 160 110',
+  { id: 'star-tiara', slot: 'top', rive: { hat: 6 }, rarity: 2, name: 'Star tiara', thumb: '160 -25 160 110',
     art: `<path d="M178 64q58-26 116 0" fill="none" stroke="#ffd166" stroke-width="8" stroke-linecap="round"/><path d="M178 64q58-26 116 0" fill="none" stroke="${L}" stroke-width="2" stroke-dasharray="0 9" stroke-linecap="round"/>${star(236, 28, 26, '#ffe08a', `stroke="${L}" stroke-width="2.5"`)}${star(196, 46, 13, '#fff6d6', `stroke="${L}" stroke-width="2"`)}${star(276, 46, 13, '#fff6d6', `stroke="${L}" stroke-width="2"`)}<circle cx="236" cy="30" r="5" fill="#ff9fb8"/>` },
-  { id: 'witch-hat', slot: 'top', rarity: 2, name: 'Little witch hat', thumb: '150 -70 170 150',
+  { id: 'witch-hat', slot: 'top', rive: { hat: 7 }, rarity: 2, name: 'Little witch hat', thumb: '150 -70 170 150',
     art: `<path d="M226 -50c-10 30-30 56-44 92h100c-12-34-20-62-56-92z" fill="#c8b6ff" ${SW}/><ellipse cx="236" cy="48" rx="70" ry="16" fill="#b39bff" ${SW}/><path d="M188 34h96" stroke="#ff9fb8" stroke-width="10"/>${star(236, 34, 9, '#ffe08a', `stroke="${L}" stroke-width="2"`)}${star(222, -6, 6, '#fff6d6')}` },
-  { id: 'moon-halo', slot: 'top', rarity: 3, name: 'Moon-goddess halo', thumb: '140 -45 190 140',
+  { id: 'moon-halo', slot: 'top', rive: { hat: 8 }, rarity: 3, name: 'Moon-goddess halo', thumb: '140 -45 190 140',
     art: `<ellipse cx="236" cy="42" rx="74" ry="18" fill="none" stroke="#ffe7a3" stroke-width="10" opacity=".9"/><ellipse cx="236" cy="42" rx="74" ry="18" fill="none" stroke="#fff" stroke-width="3"/><path d="M236 -28a34 34 0 1 0 22 60 26 26 0 1 1-22-60z" fill="#ffe08a" ${SW}/>${star(282, -8, 10, '#fff6d6')}${star(186, 6, 8, '#ffd3e6')}${star(300, 30, 6, '#c8b6ff')}` },
 
   // ---- buddies (bob beside her, bottom right) ----
@@ -80,6 +80,39 @@ export const ITEMS = [
   { id: 'cheek-hearts', slot: 'eyes', rarity: 1, name: 'Cheek heart stickers', rive: { eyewear: 3 }, thumb: '0 0 200 110',
     art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#ffd3e6"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#ffd3e6"/>${heart(56, 60, 1.5, '#ff7eb3')}${heart(144, 60, 1.5, '#ff7eb3')}${star(84, 36, 8, '#fff')}${star(172, 36, 8, '#fff')}` },
 ];
+// Bao's capsule machine: things he wears in his own .riv (bao.js). `art` is only the thumbnail.
+const INKC = '#2f2a33', ROSE = '#e8c4cc', SAGEC = '#cfe0d6', GOLDC = '#e8d3a0';
+const IK = `stroke="${INKC}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"`;
+export const BAO_ITEMS = [
+  { id: 'bao-crown', who: 'bao', slot: 'hat', rarity: 1, name: 'Tiny gold crown', rive: { hat: 1 }, thumb: '0 0 200 140',
+    art: `<path d="M50 110h100l8-62-36 30-22-46-22 46-36-30z" fill="${GOLDC}" ${IK}/><circle cx="100" cy="88" r="9" fill="${ROSE}" ${IK}/><circle cx="66" cy="96" r="6" fill="${SAGEC}" ${IK}/><circle cx="134" cy="96" r="6" fill="${SAGEC}" ${IK}/>` },
+  { id: 'bao-party', who: 'bao', slot: 'hat', rarity: 1, name: 'Party hat', rive: { hat: 2 }, thumb: '0 0 200 140',
+    art: `<path d="M66 124h68L104 28z" fill="#f3e2e5" ${IK}/><circle cx="104" cy="24" r="12" fill="#fff" ${IK}/><circle cx="92" cy="96" r="5" fill="${SAGEC}"/><circle cx="112" cy="76" r="5" fill="${GOLDC}"/><circle cx="100" cy="56" r="5" fill="${ROSE}"/><circle cx="116" cy="108" r="5" fill="${ROSE}"/>` },
+  { id: 'bao-sakura', who: 'bao', slot: 'hat', rarity: 2, name: 'Sakura crown', rive: { hat: 3 }, thumb: '0 0 200 140',
+    art: `<path d="M30 100q70-44 140 0" fill="none" stroke="${SAGEC}" stroke-width="9" stroke-linecap="round"/><path d="M30 100q70-44 140 0" fill="none" stroke="${INKC}" stroke-width="2"/>${sakura(40, 92, 13, '#f3dde2')}${sakura(70, 74, 14, '#f8e8eb')}${sakura(100, 68, 15, '#f3dde2')}${sakura(130, 74, 14, '#f8e8eb')}${sakura(160, 92, 13, '#f3dde2')}` },
+  { id: 'bao-witch', who: 'bao', slot: 'hat', rarity: 2, name: 'Little witch hat', rive: { hat: 4 }, thumb: '0 0 200 140',
+    art: `<ellipse cx="100" cy="112" rx="80" ry="18" fill="#ddd6e8" ${IK}/><path d="M66 108h68l-22-60 14-26-30 24z" fill="#ddd6e8" ${IK}/><path d="M68 96h64l-4-14H72z" fill="${ROSE}" ${IK}/>${star(112, 62, 9, GOLDC)}` },
+  { id: 'bao-halo', who: 'bao', slot: 'hat', rarity: 3, name: 'Star halo', rive: { hat: 5 }, thumb: '0 0 200 140',
+    art: `<ellipse cx="100" cy="96" rx="80" ry="20" fill="none" stroke="${INKC}" stroke-width="10"/><ellipse cx="100" cy="96" rx="80" ry="20" fill="none" stroke="${GOLDC}" stroke-width="5"/><path d="M104 24a20 20 0 1 0 8 36 15 15 0 1 1-8-36z" fill="${GOLDC}" ${IK}/>${star(52, 54, 9, '#fff')}${star(150, 50, 11, '#fff')}` },
+  { id: 'bao-pearls', who: 'bao', slot: 'neck', rarity: 2, name: 'Pearl necklace', rive: { neck: 1 }, thumb: '0 0 200 140',
+    art: `${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => { const t = Math.PI * (.12 + i * .095); return `<circle cx="${(100 - 78 * Math.cos(t)).toFixed(1)}" cy="${(40 + 52 * Math.sin(t)).toFixed(1)}" r="9" fill="#fbf7f2" ${IK}/>`; }).join('')}<ellipse cx="100" cy="108" rx="12" ry="14" fill="#f3e2e5" ${IK}/>` },
+  { id: 'bao-bowtie', who: 'bao', slot: 'neck', rarity: 1, name: 'Ribbon bow tie', rive: { neck: 2 }, thumb: '0 0 200 140',
+    art: `<path d="M100 70L44 40q-14 30 0 60zM100 70l56-30q14 30 0 60z" fill="${ROSE}" ${IK}/><circle cx="100" cy="70" r="14" fill="#d8a7b2" ${IK}/>` },
+  { id: 'bao-coin', who: 'bao', slot: 'neck', rarity: 2, name: 'Lucky coin pendant', rive: { neck: 3 }, thumb: '0 0 200 150',
+    art: `<path d="M28 20q72 64 144 0" fill="none" stroke="#c9ad74" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="88" r="34" fill="${GOLDC}" ${IK}/><circle cx="100" cy="88" r="24" fill="none" stroke="#c9ad74" stroke-width="4"/>${star(100, 88, 12, '#fff')}` },
+  { id: 'bao-glasses', who: 'bao', slot: 'eyes', rarity: 1, name: 'Round glasses', rive: { eyewear: 1 }, thumb: '0 0 200 110',
+    art: `<circle cx="58" cy="58" r="34" fill="#fff" fill-opacity=".5" ${IK}/><circle cx="142" cy="58" r="34" fill="#fff" fill-opacity=".5" ${IK}/><path d="M92 54q8-8 16 0" fill="none" ${IK}/>` },
+  { id: 'bao-shades', who: 'bao', slot: 'eyes', rarity: 2, name: 'Heart sunglasses', rive: { eyewear: 2 }, thumb: '0 0 200 110',
+    art: `${heart(56, 50, 2.3, '#e3b3bf')}${heart(144, 50, 2.3, '#e3b3bf')}<path d="M88 46q12-10 24 0" fill="none" ${IK}/>` },
+  { id: 'bao-hearts', who: 'bao', slot: 'eyes', rarity: 1, name: 'Cheek heart stickers', rive: { eyewear: 3 }, thumb: '0 0 200 110',
+    art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#f3e2e5"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#f3e2e5"/>${heart(56, 60, 1.5, '#d8a7b2')}${heart(144, 60, 1.5, '#d8a7b2')}` },
+];
+export const BAO_SLOTS = [{ id: 'hat', name: 'Hats' }, { id: 'neck', name: 'Necklaces' }, { id: 'eyes', name: 'Glasses' }];
+// what Bao wears in his .riv for the items equipped (his ribbon and nothing else when nothing is chosen)
+export function baoOutfitFor(equipped = {}) {
+  const r = slot => itemById(equipped[slot])?.rive || {};
+  return { hat: r('hat').hat ?? 0, neck: r('neck').neck ?? 0, eyewear: r('eyes').eyewear ?? 0 };
+}
 export const SLOTS = [
   { id: 'top', name: 'Crowns' }, { id: 'neck', name: 'Necklaces' }, { id: 'eyes', name: 'Glasses' }, { id: 'buddy', name: 'Buddies' }, { id: 'aura', name: 'Auras' }, { id: 'back', name: 'Backdrops' },
 ];
@@ -89,7 +122,7 @@ export function outfitFor(equipped = {}) {
   return { hat: r('top').hat ?? 1, neck: r('neck').neck ?? 1, eyewear: r('eyes').eyewear ?? 0 };
 }
 const DEFS = `<defs><radialGradient id="plNight" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#8a72d8" stop-opacity=".6"/><stop offset="1" stop-color="#3b2f6e" stop-opacity="0"/></radialGradient></defs>`;
-export const itemById = id => ITEMS.find(i => i.id === id);
+export const itemById = id => ITEMS.find(i => i.id === id) || BAO_ITEMS.find(i => i.id === id);
 export const RARITY = { 1: { name: 'Cute', stars: '★' }, 2: { name: 'Rare', stars: '★★' }, 3: { name: 'Super rare', stars: '★★★' } };
 
 export function itemThumb(it, size = 72) {
@@ -106,10 +139,11 @@ export function wearLayers(equipped = {}) {
       ${aura ? `<g class="wear-aura">${aura.art}</g>` : ''}${top ? `<g class="wear-top">${top.art}</g>` : ''}${buddy ? `<g class="wear-buddy">${buddy.art}</g>` : ''}</svg>` : '',
   };
 }
-export function rollGacha(owned = []) {
+export function rollGacha(owned = [], items = ITEMS) {
   // weights: cute 65% · rare 28% · super rare 7%
   const r = Math.random(), rarity = r < .07 ? 3 : r < .35 ? 2 : 1;
-  const pool = ITEMS.filter(i => i.rarity === rarity);
+  let pool = items.filter(i => i.rarity === rarity);
+  if (!pool.length) pool = items;
   const fresh = pool.filter(i => !owned.includes(i.id));
   const list = fresh.length && Math.random() < .75 ? fresh : pool;   // nudge toward new items
   return list[Math.floor(Math.random() * list.length)];

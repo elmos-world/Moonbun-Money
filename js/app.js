@@ -1,9 +1,9 @@
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
 import { initYutu, yutuReact, yutuDress } from './yutu.js';
-import { baoChomp } from './bao.js';
+import { baoChomp, baoDress } from './bao.js';
 import { icon, iconFor, mute } from './icons.js';
-import { ITEMS, SLOTS, RARITY, itemById, itemThumb, wearLayers, outfitFor, rollGacha, machineSVG, capsuleSVG, FORTUNES, fortuneFor, omikujiBoxSVG,
+import { ITEMS, SLOTS, BAO_ITEMS, BAO_SLOTS, baoOutfitFor, RARITY, itemById, itemThumb, wearLayers, outfitFor, rollGacha, machineSVG, capsuleSVG, FORTUNES, fortuneFor, omikujiBoxSVG,
   HEARTS_PER_LEVEL, friendLevel, FRIEND_TITLES, plantSVG, STICKERS, stickerById, SOUNDS, letterHTML } from './play.js';
 import { parseAmount, parseCSV, guessColumns, rowsToEntries, nextDue, daysUntil, monthlyCost, cycleKey, payoff, payoffPlan, insights, compressImage, roundUp } from './plan.js';
 
@@ -402,7 +402,7 @@ function viewHoard() {
   const bs = badges();
   return `
   <section class="card hoard-hero" aria-labelledby="hoard-title">
-    ${dragonSVG(mood, fill)}
+    ${dressBao(), dragonSVG(mood, fill)}
     <div>
       <h1 id="hoard-title">Bao’s treasure hoard</h1><span class="sfx sfx-hoard" lang="ja" aria-hidden="true">キラキラ♡</span>
       <p class="bubble left" aria-live="polite">${esc(line)}</p>
@@ -457,6 +457,42 @@ function goalHTML(g) {
 }
 
 /* ---------- Play: friendship, gacha, omikuji, wardrobe ---------- */
+function dressBao() { baoDress(baoOutfitFor(play().baoEquipped || {})); return ''; }
+// one wardrobe grid for either friend; who = 'yutu' or 'bao'
+function wardrobeGrid(items, owned, eq, who) {
+  return `<div class="ward-grid">${items.map(it => {
+    const has = owned.includes(it.id), on = eq[it.slot] === it.id;
+    return has ? `<button class="ward-item r${it.rarity} ${on ? 'on' : ''}" data-action="equip" data-who="${who}" data-slot="${it.slot}" data-id="${it.id}" aria-pressed="${on}" aria-label="${esc(it.name)}, ${RARITY[it.rarity].name}${on ? ', wearing' : ''}">${itemThumb(it, 76)}<span class="wi-name">${esc(it.name)}</span><span class="wi-stars">${RARITY[it.rarity].stars}</span>${on ? '<span class="wi-on">wearing</span>' : ''}</button>`
+      : `<div class="ward-item locked r${it.rarity}" aria-label="Not found yet, ${RARITY[it.rarity].name}"><span class="wi-q">?</span><span class="wi-name">???</span><span class="wi-stars">${RARITY[it.rarity].stars}</span></div>`;
+  }).join('')}</div>`;
+}
+function baoPlayHTML(t) {
+  const pl = play(), owned = pl.baoOwned || [], eq = pl.baoEquipped || {};
+  const slot = ui.baoSlot || 'hat';
+  dressBao();
+  return `
+  <section class="card play-hero" aria-labelledby="bao-gacha-title">
+    <div class="card-head"><h2 id="bao-gacha-title" data-jp="宝ガチャ">Bao’s treasure capsules</h2><span class="ticket-count">${icon('ticket', 24)} <b>${t}</b> moon ${t === 1 ? 'ticket' : 'tickets'}</span></div>
+    <div class="gacha-grid">
+      <div class="machine-wrap">${machineSVG()}</div>
+      <div>
+        <p class="bubble left">A capsule for me too? Crowns, necklaces and glasses for a very fancy dragon (｀・ω・´)♡</p>
+        <button class="btn primary big" data-action="gacha-bao" ${t ? '' : 'aria-disabled="true"'}>${icon('capsule', 22)} Turn Bao’s knob · 1 ticket</button>
+        <p class="tiny">Same moon tickets as Yutu’s machine. Odds: ${RARITY[1].stars} cute 65% · ${RARITY[2].stars} rare 28% · ${RARITY[3].stars} super rare 7%</p>
+      </div>
+    </div>
+  </section>
+  <section class="card" aria-labelledby="bao-ward-title">
+    <div class="card-head"><h2 id="bao-ward-title" data-jp="衣装">Bao’s wardrobe</h2><span class="tiny">${owned.length} / ${BAO_ITEMS.length} collected</span></div>
+    <div class="wardrobe">
+      <div class="ward-preview bao-preview">${dragonSVG('happy', 0.35, { title: 'Bao trying on accessories' })}</div>
+      <div>
+        <div class="chips" role="group" aria-label="Bao's accessory type">${BAO_SLOTS.map(sl => `<button class="chip" data-action="bao-slot" data-slot="${sl.id}" aria-pressed="${sl.id === slot}">${sl.name}</button>`).join('')}</div>
+        ${wardrobeGrid(BAO_ITEMS.filter(i => i.slot === slot), owned, eq, 'bao')}
+      </div>
+    </div>
+  </section>`;
+}
 function wearAround(inner) {
   const eq = play().equipped || {};
   yutuDress(outfitFor(eq));
@@ -513,14 +549,10 @@ function viewPlay() {
       <div class="ward-preview">${wearAround(rabbitSVG('happy', { title: 'Yutu trying on accessories' }))}</div>
       <div>
         <div class="chips" role="group" aria-label="Accessory type">${SLOTS.map(sl => `<button class="chip" data-action="wardrobe-slot" data-slot="${sl.id}" aria-pressed="${sl.id === slot}">${sl.name}</button>`).join('')}</div>
-        <div class="ward-grid">${items.map(it => {
-          const has = owned.includes(it.id), on = eq[it.slot] === it.id;
-          return has ? `<button class="ward-item r${it.rarity} ${on ? 'on' : ''}" data-action="equip" data-slot="${it.slot}" data-id="${it.id}" aria-pressed="${on}" aria-label="${esc(it.name)}, ${RARITY[it.rarity].name}${on ? ', wearing' : ''}">${itemThumb(it, 76)}<span class="wi-name">${esc(it.name)}</span><span class="wi-stars">${RARITY[it.rarity].stars}</span>${on ? '<span class="wi-on">wearing ♡</span>' : ''}</button>`
-            : `<div class="ward-item locked r${it.rarity}" aria-label="Not found yet, ${RARITY[it.rarity].name}"><span class="wi-q">?</span><span class="wi-name">???</span><span class="wi-stars">${RARITY[it.rarity].stars}</span></div>`;
-        }).join('')}</div>
+        ${wardrobeGrid(items, owned, eq, 'yutu')}
       </div>
     </div>
-  </section>`;
+  </section>${baoPlayHTML(t)}`;
 }
 
 /* ---------- gacha ---------- */
@@ -529,10 +561,10 @@ function playDialog(html, cls = '') {
   const d = $('#play-dialog'); d.className = cls; $('#play-body').innerHTML = html;
   if (!d.open) d.showModal();
 }
-function pullGacha() {
+function pullGacha(who = 'yutu') {
   if (tickets() < 1) { sound('oops'); toast('No moon tickets yet. Log a day, collect mooncakes or draw a fortune ✧'); return; }
-  const pl = play(), it = rollGacha(pl.owned || []);
-  ui.pending = it;
+  const pl = play(), it = who === 'bao' ? rollGacha(pl.baoOwned || [], BAO_ITEMS) : rollGacha(pl.owned || []);
+  ui.pending = it; ui.pendingWho = who;
   savePlay({ spent: (pl.spent || 0) + 1 });
   sound('roll');
   $('.machine')?.classList.add('turning');
@@ -544,27 +576,29 @@ function pullGacha() {
 }
 function openCapsule() {
   const it = ui.pending; if (!it) return;
+  const who = ui.pendingWho || 'yutu', ownKey = who === 'bao' ? 'baoOwned' : 'owned', friend = who === 'bao' ? 'Bao' : 'Yutu';
   ui.pending = null;
-  const pl = play(), dup = (pl.owned || []).includes(it.id);
+  const pl = play(), dup = (pl[ownKey] || []).includes(it.id);
   $('.cap-btn')?.classList.add('opening');
   sound(it.rarity === 3 ? 'chime' : 'sparkle');
   if (dup) savePlay({ hearts: (pl.hearts || 0) + 3 });
-  else savePlay({ owned: [...(pl.owned || []), it.id] });
+  else savePlay({ [ownKey]: [...(pl[ownKey] || []), it.id] });
   setTimeout(() => {
     $('#play-body').innerHTML = `<div class="gacha-reveal r${it.rarity}"><p class="reveal-stars">${RARITY[it.rarity].stars} ${RARITY[it.rarity].name}</p>
       <div class="reveal-item">${itemThumb(it, 170)}</div><h2 id="play-title">${esc(it.name)}</h2>
-      <p class="muted">${dup ? 'You already have this one, so Yutu gave you 3 friendship hearts instead ♡' : 'Added to Yutu’s wardrobe!'}</p>
-      <div class="reveal-actions">${dup ? '' : `<button class="btn primary" data-action="equip" data-slot="${it.slot}" data-id="${it.id}">Put it on Yutu ♡</button>`}
+      <p class="muted">${dup ? `You already have this one, so ${friend} gave you 3 friendship hearts instead ♡` : `Added to ${friend}’s wardrobe!`}</p>
+      <div class="reveal-actions">${dup ? '' : `<button class="btn primary" data-action="equip" data-who="${who}" data-slot="${it.slot}" data-id="${it.id}">Put it on ${friend} ♡</button>`}
       <button class="btn ghost" data-action="close-dialog">Close</button></div></div>`;
     const r = $('.reveal-item').getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, ['✧', '♡', '☆', '✿'], it.rarity === 3 ? 22 : 14);
   }, calmMotion() ? 0 : 420);
 }
-function equip(slot, id) {
-  const eq = { ...(play().equipped || {}) };
+function equip(slot, id, who = 'yutu') {
+  const key = who === 'bao' ? 'baoEquipped' : 'equipped';
+  const eq = { ...(play()[key] || {}) };
   eq[slot] = eq[slot] === id ? null : id;
-  savePlay({ equipped: eq }); sound('sparkle');
+  savePlay({ [key]: eq }); sound('sparkle');
   $('#play-dialog').open && $('#play-dialog').close();
-  toast(eq[slot] ? `Yutu is wearing the ${itemById(id).name} ♡` : 'Taken off ✧');
+  toast(eq[slot] ? `${who === 'bao' ? 'Bao' : 'Yutu'} is wearing the ${itemById(id).name} ♡` : 'Taken off ✧');
 }
 const calmMotion = () => S.settings.reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1122,6 +1156,8 @@ document.addEventListener('click', async e => {
     toast(`Removed “${g.name}” (its saved coins stay in your hoard)`, () => fire(store.addGoal(g)));
   } else if (a === 'sign-out') { await store.signOut(); }
   else if (a === 'gacha') pullGacha();
+  else if (a === 'gacha-bao') pullGacha('bao');
+  else if (a === 'bao-slot') { ui.baoSlot = el.dataset.slot; render(); $(`[data-action=bao-slot][data-slot=${ui.baoSlot}]`)?.focus(); }
   else if (a === 'plan-tab') { ui.planTab = el.dataset.t; render(); $(`[data-action=plan-tab][data-t=${ui.planTab}]`)?.focus(); }
   else if (a === 'bill-paid') {
     const r = billRows().find(x => x.b.id === el.dataset.id); if (!r) return;
@@ -1170,7 +1206,7 @@ document.addEventListener('click', async e => {
       <p class="tiny">${esc(t.note || '')} · ${money(+t.amount)} · ${fmtDate(t.date)}</p><img class="receipt-big" src="${t.receipt}" alt="Receipt photo for ${esc(t.note || 'this purchase')}">`, 'receipt');
   }
   else if (a === 'open-capsule') openCapsule();
-  else if (a === 'equip') equip(el.dataset.slot, el.dataset.id);
+  else if (a === 'equip') equip(el.dataset.slot, el.dataset.id, el.dataset.who || 'yutu');
   else if (a === 'wardrobe-slot') { ui.slot = el.dataset.slot; render(); $(`[data-action=wardrobe-slot][data-slot=${ui.slot}]`)?.focus(); }
   else if (a === 'omikuji') drawFortune();
   else if (a === 'diary') openDiary(el.dataset.date);

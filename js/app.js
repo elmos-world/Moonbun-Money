@@ -1,6 +1,7 @@
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
 import { initYutu, yutuReact, yutuDress } from './yutu.js';
+import { baoChomp } from './bao.js';
 import { icon, iconFor, mute } from './icons.js';
 import { ITEMS, SLOTS, RARITY, itemById, itemThumb, wearLayers, outfitFor, rollGacha, machineSVG, capsuleSVG, FORTUNES, fortuneFor, omikujiBoxSVG,
   HEARTS_PER_LEVEL, friendLevel, FRIEND_TITLES, plantSVG, STICKERS, stickerById, SOUNDS, letterHTML } from './play.js';
@@ -176,7 +177,7 @@ function render() {
   document.documentElement.dataset.theme = S.settings.theme || 'sakura';
   $('#view').innerHTML = (views[ui.tab] || viewHome)();
   if (ui.reaction?.kind && !ui.reaction.played && ui.tab === 'home') { ui.reaction.played = true; const k = ui.reaction.kind; setTimeout(() => yutuReact(k), 30); }
-  if (ui.reaction?.chomp) $('.hoard-hero .bao')?.classList.add('chomp');
+  if (ui.reaction?.chomp && !ui.reaction.chomped && ui.tab === 'hoard') { ui.reaction.chomped = true; baoChomp(); }
 }
 
 function viewHome() { return remindersHTML() + viewHomeBase(); }

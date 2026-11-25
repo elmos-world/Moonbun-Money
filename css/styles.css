@@ -2139,3 +2139,11 @@ dialog::backdrop { background: rgba(200, 160, 230, .35) !important; backdrop-fil
 .gacha-reveal.r3 .reveal-item { background: radial-gradient(circle, #fff 0 56%, var(--mg-gold-2) 57% 66%, transparent 67%),
     repeating-conic-gradient(from 0deg, rgba(242, 201, 109, .5) 0 10deg, transparent 10deg 20deg) !important; }
 .reveal-stars { color: var(--mg-gold); }
+/* lace runs the full top edge of every card (older layers sized and masked this decoration) */
+.card::before, .card:nth-of-type(even)::before, .grid-2 .card:nth-child(2)::before,
+.hero::before, .hoard-hero::before, #view > section.card:first-of-type:not(.hero)::before {
+  left: 22px !important; right: 22px !important; top: -9px !important; bottom: auto !important; width: auto !important; height: 12px !important;
+  -webkit-mask-image: none !important; mask-image: none !important; transform: none !important; border-radius: 0 !important; z-index: 1 !important;
+  background: radial-gradient(circle at 8px 12px, #fff 0 7px, transparent 7.5px) 0 0 / 16px 12px repeat-x !important; opacity: 1 !important; }
+/* the hero cards clip their edges, so their lace sits just inside the top */
+.hero::before, .hoard-hero::before { top: 3px !important; }

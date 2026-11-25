@@ -24,7 +24,7 @@ export function dragonSVG(mood = 'happy', fill = 0, { title = 'Bao the treasure 
 /* ---------------- The moon (fills like a lunar phase) ---------------- */
 // The savings moon, drawn like a manga ink sketch: a wobbly pen outline, sketched craters,
 // grey screentone on the dark side and a soft pink wash on the lit side (the lit part is the % saved).
-const MOON_INK = '#2f2a33';
+const MOON_INK = '#6b4672';
 function wobble(cx, cy, r, seed, amt = 1.4, n = 56) {
   const pts = [];
   for (let i = 0; i <= n; i++) {
@@ -35,36 +35,33 @@ function wobble(cx, cy, r, seed, amt = 1.4, n = 56) {
   return 'M' + pts.join(' L') + 'Z';
 }
 export function moonSVG(fraction = 0, { size = 140, label = '' } = {}) {
+  // magical-girl moon: a gold-rimmed compact; the lit part fills with glowing gold as savings grow
   const f = Math.max(0, Math.min(1, fraction));
-  const r = 56, cx = 70, cy = 70;
+  const r = 52, cx = 70, cy = 70;
   const rx = Math.abs(1 - 2 * f) * r;
   const sweep = f > 0.5 ? 1 : 0;
-  const litPath = f >= 0.999 ? wobble(cx, cy, r, 1, 0)
+  const litPath = f >= 0.999 ? `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0z`
     : f <= 0.001 ? '' : `M${cx} ${cy - r} A${r} ${r} 0 0 1 ${cx} ${cy + r} A${rx.toFixed(1)} ${r} 0 0 ${sweep} ${cx} ${cy - r}Z`;
-  const term = f > 0.001 && f < 0.999 ? `M${cx} ${cy - r} A${rx.toFixed(1)} ${r} 0 0 ${1 - sweep} ${cx} ${cy + r}` : '';
   const id = 'm' + Math.random().toString(36).slice(2, 8);
-  const craters = [[50, 52, 9, .4], [90, 86, 12, 1.1], [86, 44, 5, 2], [46, 92, 4.5, 2.7], [70, 108, 3, 3.3]];
-  // each crater: a wobbly ring plus two short shading hatches inside its upper-left rim
-  const crater = ([x, y, cr, s]) => `<path d="${wobble(x, y, cr, s, .7, 24)}"/>${cr > 4 ? `<path d="M${(x - cr * .62).toFixed(1)} ${(y - cr * .05).toFixed(1)}l${(cr * .32).toFixed(1)} ${(-cr * .32).toFixed(1)}M${(x - cr * .38).toFixed(1)} ${(y - cr * .45).toFixed(1)}l${(cr * .3).toFixed(1)} ${(-cr * .22).toFixed(1)}" stroke-width=".8"/>` : ''}`;
-  return `<svg class="moon moon-ink" viewBox="0 0 140 140" width="${size}" height="${size}" role="img" aria-label="${label || `Moon ${Math.round(f * 100)}% full`}">
+  const craters = [[52, 54, 9], [90, 88, 11], [88, 46, 5], [48, 92, 5], [70, 110, 3.5]];
+  const star = (x, y, k, c) => `<path d="M${x} ${y - k}L${x + k * .28} ${y - k * .28}L${x + k} ${y}L${x + k * .28} ${y + k * .28}L${x} ${y + k}L${x - k * .28} ${y + k * .28}L${x - k} ${y}L${x - k * .28} ${y - k * .28}Z" fill="${c}" stroke="${MOON_INK}" stroke-width="1" stroke-linejoin="round"/>`;
+  return `<svg class="moon moon-magic" viewBox="0 0 140 140" width="${size}" height="${size}" role="img" aria-label="${label || `Moon ${Math.round(f * 100)}% full`}">
   <defs>
-    <pattern id="${id}t" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><circle cx="2.5" cy="2.5" r=".95" fill="${MOON_INK}" fill-opacity=".32"/></pattern>
-    <radialGradient id="${id}g" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#fdf6f6"/><stop offset=".6" stop-color="#f4dfe3"/><stop offset="1" stop-color="#e7c3ca"/></radialGradient>
+    <radialGradient id="${id}d" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#f6f0ff"/><stop offset="1" stop-color="#ddd0f5"/></radialGradient>
+    <radialGradient id="${id}l" cx="38%" cy="32%" r="78%"><stop offset="0" stop-color="#fffbea"/><stop offset=".55" stop-color="#ffe8a6"/><stop offset="1" stop-color="#f6c766"/></radialGradient>
+    <radialGradient id="${id}h" cx="50%" cy="50%" r="50%"><stop offset=".62" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1c4"/><stop offset=".5" stop-color="#f2c96d"/><stop offset="1" stop-color="#d9a441"/></linearGradient>
     <clipPath id="${id}c">${litPath ? `<path d="${litPath}"/>` : '<rect width="0" height="0"/>'}</clipPath>
-    <clipPath id="${id}o"><path d="${wobble(cx, cy, r, 1)}"/></clipPath>
   </defs>
-  <g clip-path="url(#${id}o)">
-    <rect width="140" height="140" fill="#fbf8f3"/>
-    <rect width="140" height="140" fill="url(#${id}t)"/>
-    <g clip-path="url(#${id}c)"><rect width="140" height="140" fill="url(#${id}g)"/>
-      <g stroke="#d9a7b0" stroke-width="1" stroke-linecap="round" opacity=".7">${[0, 1, 2, 3, 4, 5].map(i => `<path d="M${98 + i * 5} ${40 + i * 3}l-14 14"/>`).join('')}</g></g>
-  </g>
-  <g fill="none" stroke="${MOON_INK}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity=".85">${craters.map(crater).join('')}</g>
-  ${term ? `<path d="${term}" fill="none" stroke="${MOON_INK}" stroke-width="1" stroke-dasharray="7 3 2 3" stroke-linecap="round" opacity=".55"/>` : ''}
-  <path d="${wobble(cx, cy, r, 1)}" fill="none" stroke="${MOON_INK}" stroke-width="2.2" stroke-linejoin="round"/>
-  <path d="${wobble(cx + .8, cy - .6, r + 1.2, 4, 1.8)}" fill="none" stroke="${MOON_INK}" stroke-width=".8" stroke-dasharray="40 9 12 7 60 12" opacity=".5"/>
-  <g fill="${MOON_INK}"><path d="M122 18l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z"/><path d="M14 112l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></g>
-  <g fill="#d9a7b0"><circle cx="128" cy="40" r="2"/><circle cx="10" cy="96" r="1.6"/></g>
+  ${f > 0.001 ? `<circle cx="${cx}" cy="${cy}" r="${r + 16}" fill="url(#${id}h)" opacity="${(.35 + f * .65).toFixed(2)}"/>` : ''}
+  <circle cx="${cx}" cy="${cy}" r="${r + 7}" fill="url(#${id}r)" stroke="${MOON_INK}" stroke-width="1.6"/>
+  <circle cx="${cx}" cy="${cy}" r="${r + 2.5}" fill="#fff"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}d)" stroke="${MOON_INK}" stroke-width="1.4"/>
+  <g clip-path="url(#${id}c)"><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}l)"/></g>
+  <g fill="#f7c6dc" fill-opacity=".55" stroke="#e9a3c3" stroke-width="1" stroke-opacity=".7">${craters.map(([x, y, k]) => `<circle cx="${x}" cy="${y}" r="${k}"/>`).join('')}</g>
+  <path d="M40 46a36 36 0 0 1 18-16" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+  <circle cx="${cx}" cy="${cy - r - 7}" r="5" fill="#ff9cc7" stroke="${MOON_INK}" stroke-width="1.2"/><circle cx="${cx - 1.5}" cy="${cy - r - 8.5}" r="1.5" fill="#fff"/>
+  ${star(124, 22, 7, '#fff0c4')}${star(16, 112, 5, '#ffc6de')}${star(126, 112, 4, '#e6dcff')}
 </svg>`;
 }
 

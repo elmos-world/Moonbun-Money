@@ -73,33 +73,6 @@ function scan() {
 }
 const liveRigs = () => live().map(cv => RIGS.get(cv)).filter(r => r && r.loaded);
 
-
-/* ---------------- manga symbols ----------------
-   Drawn over her canvas in the same 500×500 space as her artboard
-   (her cheeks are at about x 168 / 287, y 252; her own sweat drop and zzz live in the .riv). */
-const INK = '#6a4c74';
-const MANGA_SYMBOLS = `<svg viewBox="0 0 500 500" aria-hidden="true" focusable="false">
-  <g class="ms ms-sweat"><path d="M128 146c-11 17-17 26-17 36a17 17 0 0 0 34 0c0-10-6-19-17-36z" fill="#cfeeff" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/><path d="M120 180a9 9 0 0 0 6 10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g>
-  <g class="ms ms-blush" fill="none" stroke="#ff6fa8" stroke-width="4" stroke-linecap="round">
-    ${[0, 1, 2, 3].map(i => `<path d="M${155 + i * 9} 262l7-17"/><path d="M${274 + i * 9} 262l7-17"/>`).join('')}
-  </g>
-  <g class="ms ms-anger" transform="translate(178 150)" fill="none" stroke="#ff4f78" stroke-width="6.5" stroke-linecap="round">
-    <path d="M-20-6q12 0 12-14M6-20q0 12 14 12M20 6q-12 0-12 14M-6 20q0-12-14-12"/>
-  </g>
-  <g class="ms ms-sparkle">
-    ${[[112, 236, 22], [372, 196, 16], [250, 84, 12]].map(([x, y, r], i) => `<path class="ms-tw" style="animation-delay:${i * .25}s" d="M${x} ${y - r}Q${x + r * .16} ${y - r * .16} ${x + r} ${y}Q${x + r * .16} ${y + r * .16} ${x} ${y + r}Q${x - r * .16} ${y + r * .16} ${x - r} ${y}Q${x - r * .16} ${y - r * .16} ${x} ${y - r}Z" fill="#ffe08a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`).join('')}
-  </g>
-</svg>`;
-// which symbol each reaction shows, and for how long
-const REACTION_SYMBOL = { pet: 'blush', giggle: 'blush', hello: 'blush', saving: 'sparkle', party: 'sparkle', income: 'sparkle', over: 'anger', deleted: 'sweat', wake: 'sweat' };
-const symTimers = new WeakMap();
-function showSymbol(cv, sym, ms) {
-  const box = cv.closest('.yutu-box'); if (!box) return;
-  box.dataset.sym = sym;
-  clearTimeout(symTimers.get(box));
-  symTimers.set(box, setTimeout(() => { if (box.dataset.sym === sym) delete box.dataset.sym; }, Math.max(ms, 1600)));
-}
-
 /* ---------------- reactions ---------------- */
 let sayHook = null, busyUntil = 0;
 const REACTIONS = {
@@ -123,7 +96,6 @@ export function yutuReact(kind, { say, soft = false } = {}) {
   if (soft && now < busyUntil) return;
   busyUntil = now + r.ms;
   if (!calm()) liveRigs().forEach(rig => vmFire(rig, kind));
-  if (REACTION_SYMBOL[kind]) live().forEach(cv => showSymbol(cv, REACTION_SYMBOL[kind], r.ms + 600));
   const line = say || (r.say && r.say[Math.floor(Math.random() * r.say.length)]);
   if (line && sayHook) sayHook(line);
 }
@@ -142,7 +114,7 @@ export function yutuDress(outfit = {}) {
 export function yutuSVG(mood = 'calm', { mini = false, interactive = false, title = 'Yutu the Jade Rabbit' } = {}) {
   const label = `${title}, ${{ calm: 'smiling', happy: 'smiling', worried: 'looking worried', party: 'celebrating', sleepy: 'dozing' }[mood] || 'smiling'}`;
   const role = interactive ? `role="button" tabindex="0" aria-label="${label}. Tap to pet her."` : `role="img" aria-label="${label}"`;
-  return `<span class="yutu-box"><canvas class="yutu-rive${mini ? ' mini' : ''}${interactive ? ' interactive' : ''}" width="500" height="500" data-mood="${mood}" ${role}></canvas><span class="manga-sym">${MANGA_SYMBOLS}</span></span>`;
+  return `<canvas class="yutu-rive${mini ? ' mini' : ''}${interactive ? ' interactive' : ''}" width="500" height="500" data-mood="${mood}" ${role}></canvas>`;
 }
 
 /* ---------------- behaviour ---------------- */

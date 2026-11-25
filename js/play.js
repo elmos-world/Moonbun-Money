@@ -1,3 +1,4 @@
+import { WEAR_ART } from './wear-art.js';
 // Moonbun Money — play features: gacha wardrobe, omikuji, friendship hearts,
 // savings plants, diary stickers, Yutu's monthly letter and soft sounds.
 // Everything here is drawn in SVG; accessories float around Yutu in her
@@ -83,6 +84,7 @@ export const ITEMS = [
 ];
 // Yutu's accessory pictures match the drawings she wears in her .riv
 for (const it of ITEMS) if (WEAR_ART[it.id]) Object.assign(it, WEAR_ART[it.id]);
+
 // Bao's capsule machine: things he wears in his own .riv (bao.js). `art` is only the thumbnail.
 const INKC = '#2f2a33', ROSE = '#e8c4cc', SAGEC = '#cfe0d6', GOLDC = '#e8d3a0';
 const IK = `stroke="${INKC}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"`;

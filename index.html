@@ -17,6 +17,8 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- hand-drawn wobble for the ink icons (used by CSS: .ic { filter: url(#ink-rough) }) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="ink-rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
   <a class="skip" href="#view">Skip to content</a>
   <div class="stars" aria-hidden="true"></div>
 

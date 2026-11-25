@@ -1,7 +1,7 @@
-// Kawaii icon set for Moonbun Money — hand-drawn in SVG (24×24), soft plum line-art,
-// pastel fills, and tiny faces on the friendly ones. Use icon(name, size?).
-const L = 'var(--ic-line, #6b4672)';
-const SW = 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+// Kawaii icon set for Moonbun Money — hand-drawn in SVG (24×24), ink line-art,
+// muted manga tones, and tiny faces on the friendly ones. Use icon(name, size?).
+const L = 'var(--ic-line, #2f2a33)';
+const SW = 'stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"';
 const o = (fill) => `fill="${fill}" stroke="${L}" ${SW}`;
 const blush = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="1.2" ry=".7" fill="#ff9fb8" opacity=".85"/>`;
 // little face centred at (x, y); w = half distance between the eyes
@@ -75,8 +75,36 @@ const D = {
 };
 
 export const ICON_NAMES = Object.keys(D);
+// Manga ink look: every colour is pulled toward soft grey and warm paper (pinks keep a little
+// more colour), and the lines are drawn in ink. The slight hand-drawn wobble comes from the
+// #ink-rough filter in index.html (applied with CSS to .ic).
+const PAPER = [251, 248, 243];
+const muteCache = new Map();
+function mute(hex) {
+  if (muteCache.has(hex)) return muteCache.get(hex);
+  const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const [r, g, b] = c, max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const lum = .299 * r + .587 * g + .114 * b;
+  let h = 0;
+  if (max !== min) h = max === r ? ((g - b) / (max - min) + 6) % 6 : max === g ? (b - r) / (max - min) + 2 : (r - g) / (max - min) + 4;
+  const pinkish = max === r && (h >= 5 || h < .35) && max - min > 40;
+  let out;
+  if (lum < 110) out = [47, 42, 51];                                   // dark line colours become ink
+  else {
+    const keep = pinkish ? .5 : .28;
+    out = c.map((v, i) => Math.round(((lum + (v - lum) * keep) * .85) + PAPER[i] * .15));
+  }
+  const res = '#' + out.map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
+  muteCache.set(hex, res);
+  return res;
+}
+const bodyCache = new Map();
+const inked = name => {
+  if (!bodyCache.has(name)) bodyCache.set(name, (D[name] || D.other).replace(/#[0-9a-fA-F]{6}\b/g, mute));
+  return bodyCache.get(name);
+};
 export function icon(name, size = 22, label = '') {
-  const body = D[name] || D.other;
+  const body = inked(D[name] ? name : 'other');
   return `<svg class="ic ic-${name}" viewBox="0 0 24 24" width="${size}" height="${size}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true" focusable="false"'}>${body}</svg>`;
 }
 // old saved goals used emoji: map them to drawings

@@ -1870,3 +1870,4 @@ dialog::backdrop { background: radial-gradient(rgba(var(--mm-pink-rgb), .5) 1px,
 .chip[aria-checked=true] .ic, .chip[aria-pressed=true] .ic { filter: url(#ink-rough) grayscale(1) brightness(3.2); }
 .reduce-motion .ic { filter: none; }
 .ic { --ic-line: #2f2a33; }
+.ic { filter: url(#ink-rough); } .tile .label .ic, .tabbar .ic { filter: url(#ink-rough); }

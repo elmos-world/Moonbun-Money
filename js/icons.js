@@ -75,26 +75,25 @@ const D = {
 };
 
 export const ICON_NAMES = Object.keys(D);
-// Manga ink look: every colour is pulled toward soft grey and warm paper (pinks keep a little
-// more colour), and the lines are drawn in ink. The slight hand-drawn wobble comes from the
-// #ink-rough filter in index.html (applied with CSS to .ic).
-const PAPER = [251, 248, 243];
+// Manga ink look in the site's own palette: every colour in the drawings is swapped for one of
+// the page's colours (ink, white paper, the muted pinks and the chosen palette's accent), picked by
+// how light it is and whether it was pink. Because they are CSS variables, icons follow the palette.
+// The slight hand-drawn wobble comes from the #ink-rough filter in index.html (applied to .ic).
 const muteCache = new Map();
 function mute(hex) {
   if (muteCache.has(hex)) return muteCache.get(hex);
-  const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  const [r, g, b] = c, max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
   const lum = .299 * r + .587 * g + .114 * b;
   let h = 0;
   if (max !== min) h = max === r ? ((g - b) / (max - min) + 6) % 6 : max === g ? (b - r) / (max - min) + 2 : (r - g) / (max - min) + 4;
-  const pinkish = max === r && (h >= 5 || h < .35) && max - min > 40;
-  let out;
-  if (lum < 110) out = [47, 42, 51];                                   // dark line colours become ink
-  else {
-    const keep = pinkish ? .5 : .28;
-    out = c.map((v, i) => Math.round(((lum + (v - lum) * keep) * .85) + PAPER[i] * .15));
-  }
-  const res = '#' + out.map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
+  const pinkish = max === r && (h >= 4.6 || h < .3) && max - min > 30;
+  let res;
+  if (lum < 110) res = 'var(--mm-ink, #2f2a33)';                                  // line colours
+  else if (pinkish) res = lum > 205 ? 'var(--mm-pink-soft, #f3e2e5)' : lum > 160 ? 'var(--mm-pink, #d9a7b0)' : 'var(--mm-pink-deep, #b47885)';
+  else if (lum > 245) res = '#fff';                                               // white paper
+  else if (lum > 196) res = 'var(--accent-soft, #f1e3e6)';
+  else res = 'var(--accent, #b9768a)';
   muteCache.set(hex, res);
   return res;
 }

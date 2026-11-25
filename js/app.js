@@ -19,7 +19,8 @@ const CATS = [
   { id: 'other', label: 'Other', emoji: 'other' },
 ];
 const catById = id => CATS.find(c => c.id === id) || CATS[7];
-const catColor = id => `var(--c${CATS.indexOf(catById(id)) + 1})`;
+// category colours, softened toward paper so they sit with the ink-and-paper look
+const catColor = id => `color-mix(in srgb, var(--c${CATS.indexOf(catById(id)) + 1}) 55%, #fbf8f3)`;
 const GOAL_EMOJI = ['gem', 'laptop', 'plane', 'headphones', 'car', 'house', 'gradcap', 'piggy', 'gift', 'chest'];
 const THEMES = [
   { id: 'sakura', name: 'Sakura', a: '#f77fb0', b: '#ffd9e8' },
@@ -309,40 +310,56 @@ function viewSpendingBase() {
   </section>`;
 }
 
+// "Where it went": drawn like an ink sketch. Each slice is an outlined wedge in a muted
+// category colour with its own screentone texture (so slices differ by more than colour),
+// and the whole ring gets the same pen wobble as the icons.
+const DONUT_TEX = ['', 'dots', 'lines', 'cross', 'hlines', 'bigdots', 'rlines', 'grid'];
 function donutHTML(st) {
   if (!st.spent) return emptyHTML('No spending this month. That’s a whole moon of mooncakes ✿');
-  const r = 66, C = 2 * Math.PI * r, w = 22, gap = 7;
-  let offset = 0;
+  const cx = 110, cy = 110, R = 84, ri = 50;
   const parts = CATS.map(c => ({ c, v: st.byCat[c.id] })).filter(p => p.v > 0);
+  const pt = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)} ${(cy + rad * Math.sin(a)).toFixed(2)}`;
+  let a0 = -Math.PI / 2;
   const segs = parts.map(p => {
-    const frac = p.v / st.spent;
-    // round caps add w/2 at each end, so shorten the dash to keep soft gaps between slices
-    const len = parts.length > 1 ? Math.max(frac * C - gap - w, .01) : C;
+    const frac = p.v / st.spent, a1 = a0 + frac * Math.PI * 2, large = frac > .5 ? 1 : 0;
+    const idx = CATS.indexOf(p.c);
+    const d = parts.length === 1
+      ? `M${pt(R, -Math.PI / 2)}A${R} ${R} 0 1 1 ${pt(R, Math.PI / 2)}A${R} ${R} 0 1 1 ${pt(R, -Math.PI / 2)}ZM${pt(ri, -Math.PI / 2)}A${ri} ${ri} 0 1 0 ${pt(ri, Math.PI / 2)}A${ri} ${ri} 0 1 0 ${pt(ri, -Math.PI / 2)}Z`
+      : `M${pt(R, a0)}A${R} ${R} 0 ${large} 1 ${pt(R, a1)}L${pt(ri, a1)}A${ri} ${ri} 0 ${large} 0 ${pt(ri, a0)}Z`;
     const tip = `${p.c.label}: ${money(p.v)} (${Math.round(frac * 100)}%)`;
-    const el = `<circle class="seg" cx="110" cy="110" r="${r}" fill="none" stroke="${catColor(p.c.id)}" stroke-width="${w}"
-      stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-(offset + (parts.length > 1 ? (gap + w) / 2 : 0))}" transform="rotate(-90 110 110)"
-      stroke-linecap="${parts.length > 1 ? 'round' : 'butt'}" tabindex="0" role="listitem" aria-label="${esc(tip)}" data-tip="${esc(tip)}"/>`;
-    offset += frac * C;
-    return el;
+    const tex = DONUT_TEX[idx] ? `<path d="${d}" fill="url(#dtex-${DONUT_TEX[idx]})" fill-rule="evenodd" pointer-events="none"/>` : '';
+    a0 = a1;
+    return `<g class="seg-g"><path class="seg" d="${d}" fill-rule="evenodd" style="--slice:${catColor(p.c.id)}" tabindex="0" role="listitem" aria-label="${esc(tip)}" data-tip="${esc(tip)}"/>${tex}</g>`;
   }).join('');
-  const star = (x, y, k, c) => `<path d="M${x} ${y - k}Q${x + k * .2} ${y - k * .2} ${x + k} ${y}Q${x + k * .2} ${y + k * .2} ${x} ${y + k}Q${x - k * .2} ${y + k * .2} ${x - k} ${y}Q${x - k * .2} ${y - k * .2} ${x} ${y - k}Z" fill="${c}"/>`;
+  const ink = '#2f2a33';
+  const pat = (id, body, size = 6, rot = 0) => `<pattern id="dtex-${id}" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot})">${body}</pattern>`;
+  const sparkle = (x, y, k) => `<path d="M${x} ${y - k}Q${x + k * .18} ${y - k * .18} ${x + k} ${y}Q${x + k * .18} ${y + k * .18} ${x} ${y + k}Q${x - k * .18} ${y + k * .18} ${x - k} ${y}Q${x - k * .18} ${y - k * .18} ${x} ${y - k}Z"/>`;
   return `<div class="donut-wrap">
-    <svg class="donut" viewBox="0 0 220 220" role="list" aria-label="Spending by category">
-      <circle cx="110" cy="110" r="98" class="lace-fill"/>
-      <circle cx="110" cy="110" r="98" class="lace-dots"/>
-      <circle cx="110" cy="110" r="${r}" class="donut-track" stroke-width="${w + 8}" fill="none"/>
-      ${segs}
-      <circle cx="110" cy="110" r="46" class="donut-heart-bg"/>
-      <circle cx="110" cy="110" r="41" class="donut-scallop"/>
-      <g class="donut-center" aria-hidden="true">
-        <path d="M110 84c-6-4-7.5-8.5-4.5-10.2 1.8-1 3.6-.2 4.5 1.5.9-1.7 2.7-2.5 4.5-1.5 3 1.7 1.5 6.2-4.5 10.2z" class="donut-heart"/>
-        <text class="big" x="110" y="112" text-anchor="middle">${money(st.spent, true)}</text>
-        <text class="small" x="110" y="130" text-anchor="middle">spent ♡</text>
+    <svg class="donut donut-ink" viewBox="0 0 220 220" role="list" aria-label="Spending by category">
+      <defs>
+        ${pat('dots', `<circle cx="3" cy="3" r=".9" fill="${ink}" fill-opacity=".35"/>`, 5, 30)}
+        ${pat('lines', `<path d="M0 3h6" stroke="${ink}" stroke-opacity=".3" stroke-width=".8"/>`, 6, 45)}
+        ${pat('cross', `<path d="M0 3h6M3 0v6" stroke="${ink}" stroke-opacity=".25" stroke-width=".7"/>`, 6, 45)}
+        ${pat('hlines', `<path d="M0 2.5h5" stroke="${ink}" stroke-opacity=".28" stroke-width=".8"/>`, 5, 0)}
+        ${pat('bigdots', `<circle cx="4" cy="4" r="1.5" fill="${ink}" fill-opacity=".22"/>`, 8, 20)}
+        ${pat('rlines', `<path d="M0 3h6" stroke="${ink}" stroke-opacity=".3" stroke-width=".8"/>`, 6, -45)}
+        ${pat('grid', `<path d="M0 .5h7M.5 0v7" stroke="${ink}" stroke-opacity=".2" stroke-width=".7"/>`, 7, 0)}
+      </defs>
+      <g class="donut-sketch" fill="none" stroke="${ink}">
+        <circle cx="${cx}" cy="${cy}" r="${R + 9}" stroke-width=".8" stroke-dasharray="30 6 9 5 50 8" opacity=".45"/>
+        <circle cx="${cx + .8}" cy="${cy - .6}" r="${R + 5}" stroke-width=".7" stroke-dasharray="70 10 20 8" opacity=".35"/>
       </g>
-      <g class="donut-stars">${star(24, 30, 9, '#ffe08a')}${star(196, 40, 6, '#fff')}${star(200, 186, 8, '#ffe08a')}${star(22, 190, 5, '#fff')}</g>
+      <g class="donut-slices">${segs}</g>
+      <circle cx="${cx}" cy="${cy}" r="${ri - 5}" class="donut-heart-bg"/>
+      <g class="donut-center" aria-hidden="true">
+        <path d="M110 82c-6-4-7.5-8.5-4.5-10.2 1.8-1 3.6-.2 4.5 1.5.9-1.7 2.7-2.5 4.5-1.5 3 1.7 1.5 6.2-4.5 10.2z" class="donut-heart"/>
+        <text class="big" x="110" y="112" text-anchor="middle">${money(st.spent, true)}</text>
+        <text class="small" x="110" y="129" text-anchor="middle">spent</text>
+      </g>
+      <g class="donut-stars" fill="${ink}">${sparkle(22, 30, 6)}${sparkle(198, 188, 7)}${sparkle(200, 34, 3.5)}</g>
     </svg>
     <ul class="legend" aria-label="Spending by category, table">
-      ${parts.sort((a, b) => b.v - a.v).map(p => `<li style="--swatch:${catColor(p.c.id)}"><span class="swatch"></span><span>${icon(p.c.id, 18)} ${p.c.label}</span><span class="pct">${Math.round((p.v / st.spent) * 100)}%</span><span class="amt">${money(p.v)}</span></li>`).join('')}
+      ${parts.sort((a, b) => b.v - a.v).map(p => `<li style="--swatch:${catColor(p.c.id)}"><span class="swatch tex-${DONUT_TEX[CATS.indexOf(p.c)] || 'none'}"></span><span>${icon(p.c.id, 18)} ${p.c.label}</span><span class="pct">${Math.round((p.v / st.spent) * 100)}%</span><span class="amt">${money(p.v)}</span></li>`).join('')}
     </ul>
   </div>`;
 }

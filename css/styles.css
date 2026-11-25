@@ -1871,3 +1871,46 @@ dialog::backdrop { background: radial-gradient(rgba(var(--mm-pink-rgb), .5) 1px,
 .reduce-motion .ic { filter: none; }
 .ic { --ic-line: #2f2a33; }
 .ic { filter: url(#ink-rough); } .tile .label .ic, .tabbar .ic { filter: url(#ink-rough); }
+
+/* =====================================================================
+   HANDWRITTEN — Klee One (a pencil-handwriting font with Japanese and
+   Latin letters) for everything; Yutu keeps her round handwriting.
+   ===================================================================== */
+:root {
+  --font: 'Klee One', 'Zen Kurenaido', 'Zen Maru Gothic', cursive;
+  --title: 'Klee One', 'Zen Kurenaido', 'Shippori Mincho B1', cursive;
+}
+body { font-family: var(--font); font-weight: 600; }
+h1, h2, h3, .brand, #month-label, .dialog-head h2, .card h2, .card h2[data-jp]::after,
+.tile .value, .day-head, .streak .num, .w52-b, .sfx, .tile-sfx, .brand small, #month-label small, .hero-moon .pct { font-family: var(--title); font-weight: 600; }
+.btn, .chip, .tabbar button, .field > span, .field input, .field select, .tx .what, .tx .amt, .legend li, .toast, .tooltip, .demo-banner { font-family: var(--font); font-weight: 600; }
+.tile .value { font-size: 1.65rem; }
+.card h2 { font-size: 1.28rem; letter-spacing: .02em; }
+.bubble { font-family: var(--hand); }
+
+/* ---------- hand-drawn "Where it went" ---------- */
+.donut-ink .donut-slices { filter: url(#ink-rough); }
+.donut-ink .seg { fill: color-mix(in srgb, var(--slice) 50%, #fbf8f3); stroke: #2f2a33; stroke-width: 1.6; stroke-linejoin: round;
+  cursor: pointer; transition: fill .15s; filter: none; }
+.donut-ink .seg:hover, .donut-ink .seg:focus-visible { fill: color-mix(in srgb, var(--slice) 75%, #fbf8f3); stroke-width: 2.4; outline: none; }
+.donut-ink .donut-heart-bg { fill: var(--mm-paper); stroke: #2f2a33; stroke-width: 1.2; stroke-dasharray: 22 4 6 4; filter: url(#ink-rough); }
+.donut-ink .donut-heart { fill: var(--mm-pink); stroke: #2f2a33; stroke-width: .9; }
+.donut-ink .donut-center .big { font-family: var(--title); font-weight: 600; font-size: 23px; fill: #2f2a33; }
+.donut-ink .donut-center .small { font-family: var(--title); fill: var(--mm-pink-deep); font-size: 13px; letter-spacing: .08em; }
+.donut-ink .donut-stars path { stroke: none; }
+.legend li { background: #fff; border: 1.5px solid rgba(47, 42, 51, .3); border-image: none; }
+.legend .swatch { width: 14px; height: 14px; border-radius: 4px; box-shadow: none; border: 1.3px solid #2f2a33;
+  background-color: color-mix(in srgb, var(--swatch) 50%, #fbf8f3); }
+.legend .swatch.tex-dots { background-image: radial-gradient(rgba(47, 42, 51, .45) .8px, transparent 1px); background-size: 4px 4px; }
+.legend .swatch.tex-lines { background-image: repeating-linear-gradient(45deg, rgba(47, 42, 51, .4) 0 .8px, transparent .8px 4px); }
+.legend .swatch.tex-rlines { background-image: repeating-linear-gradient(-45deg, rgba(47, 42, 51, .4) 0 .8px, transparent .8px 4px); }
+.legend .swatch.tex-hlines { background-image: repeating-linear-gradient(0deg, rgba(47, 42, 51, .4) 0 .8px, transparent .8px 3.5px); }
+.legend .swatch.tex-cross { background-image: repeating-linear-gradient(45deg, rgba(47, 42, 51, .35) 0 .7px, transparent .7px 4px), repeating-linear-gradient(-45deg, rgba(47, 42, 51, .35) 0 .7px, transparent .7px 4px); }
+.legend .swatch.tex-bigdots { background-image: radial-gradient(rgba(47, 42, 51, .35) 1.2px, transparent 1.5px); background-size: 6px 6px; }
+.legend .swatch.tex-grid { background-image: linear-gradient(rgba(47, 42, 51, .3) .7px, transparent .7px), linear-gradient(90deg, rgba(47, 42, 51, .3) .7px, transparent .7px); background-size: 4px 4px; }
+.donut-ink .seg { fill: var(--slice); }
+.donut-ink .seg:hover, .donut-ink .seg:focus-visible { fill: color-mix(in srgb, var(--slice) 70%, #2f2a33); }
+.legend .swatch { background-color: var(--swatch); }
+.budget .bar > span, .bar > span[style*="background-color"] { box-shadow: inset 0 0 0 1px rgba(47, 42, 51, .35); }
+.tr-spent, .tr-legend i.tr-spent { background: var(--mm-pink); box-shadow: inset 0 0 0 1px rgba(47, 42, 51, .4); }
+.tr-saved, .tr-legend i.tr-saved { background: color-mix(in srgb, #2a78d6 45%, #fbf8f3); box-shadow: inset 0 0 0 1px rgba(47, 42, 51, .4); }

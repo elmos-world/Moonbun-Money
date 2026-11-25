@@ -2,6 +2,7 @@
 // savings plants, diary stickers, Yutu's monthly letter and soft sounds.
 // Everything here is drawn in SVG; accessories float around Yutu in her
 // 500×500 artboard space, so they line up with her canvas at any size.
+import { WEAR_ART } from './wear-art.js';
 
 const L = '#6b4672';
 const SW = `stroke="${L}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
@@ -80,6 +81,8 @@ export const ITEMS = [
   { id: 'cheek-hearts', slot: 'eyes', rarity: 1, name: 'Cheek heart stickers', rive: { eyewear: 3 }, thumb: '0 0 200 110',
     art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#ffd3e6"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#ffd3e6"/>${heart(56, 60, 1.5, '#ff7eb3')}${heart(144, 60, 1.5, '#ff7eb3')}${star(84, 36, 8, '#fff')}${star(172, 36, 8, '#fff')}` },
 ];
+// Yutu's accessory pictures match the drawings she wears in her .riv
+for (const it of ITEMS) if (WEAR_ART[it.id]) Object.assign(it, WEAR_ART[it.id]);
 // Bao's capsule machine: things he wears in his own .riv (bao.js). `art` is only the thumbnail.
 const INKC = '#2f2a33', ROSE = '#e8c4cc', SAGEC = '#cfe0d6', GOLDC = '#e8d3a0';
 const IK = `stroke="${INKC}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"`;

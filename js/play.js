@@ -111,6 +111,11 @@ export const BAO_ITEMS = [
   { id: 'bao-hearts', who: 'bao', slot: 'eyes', rarity: 1, name: 'Cheek heart stickers', rive: { eyewear: 3 }, thumb: '0 0 200 110',
     art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#f3e2e5"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#f3e2e5"/>${heart(56, 60, 1.5, '#d8a7b2')}${heart(144, 60, 1.5, '#d8a7b2')}` },
 ];
+// Bao wears the same Quiver drawings as Yutu for the accessories they share
+const BAO_SAME = { 'bao-sakura': 'sakura-crown', 'bao-witch': 'witch-hat', 'bao-bowtie': 'bow-tie', 'bao-coin': 'coin-pendant',
+  'bao-glasses': 'round-glasses', 'bao-shades': 'heart-shades', 'bao-hearts': 'cheek-hearts' };
+for (const it of BAO_ITEMS) if (WEAR_ART[BAO_SAME[it.id]]) Object.assign(it, WEAR_ART[BAO_SAME[it.id]]);
+
 export const BAO_SLOTS = [{ id: 'hat', name: 'Hats' }, { id: 'neck', name: 'Necklaces' }, { id: 'eyes', name: 'Glasses' }];
 // what Bao wears in his .riv for the items equipped (his ribbon and nothing else when nothing is chosen)
 export function baoOutfitFor(equipped = {}) {

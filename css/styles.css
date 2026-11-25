@@ -1656,19 +1656,17 @@ dialog::before { width: 130px; height: 104px; right: 6px; bottom: 4px; opacity: 
 .manga-sym { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 .manga-sym svg { width: 100%; height: 100%; overflow: visible; }
 .ms { opacity: 0; transition: opacity .25s; }
-/* lasting moods */
-.yutu-box:has(canvas[data-mood=worried]) .ms-sweat, .yutu-box[data-sym=sweat] .ms-sweat { opacity: 1; animation: ms-drip 2.4s ease-in-out infinite; }
-.yutu-box:has(canvas[data-mood=sleepy]) .ms-zzz, .yutu-box.dozing .ms-zzz { opacity: 1; animation: ms-float 3s ease-in-out infinite; }
+/* (her worried sweat drop and sleepy zzz are part of her Rive animation) */
+.yutu-box[data-sym=sweat] .ms-sweat { opacity: 1; animation: ms-drip 2.4s ease-in-out infinite; }
 /* quick reactions */
 .yutu-box[data-sym=blush] .ms-blush { opacity: 1; animation: ms-pop .35s ease-out; }
 .yutu-box[data-sym=anger] .ms-anger { opacity: 1; animation: ms-throb .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
 .yutu-box[data-sym=sparkle] .ms-sparkle { opacity: 1; }
 .yutu-box[data-sym=sparkle] .ms-tw { animation: ms-twinkle .8s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
-.yutu-box[data-sym=blush] .ms-sweat, .yutu-box[data-sym=sparkle] .ms-sweat { opacity: 0; }
 @keyframes ms-drip { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
 @keyframes ms-float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px); } }
 @keyframes ms-pop { from { opacity: 0; transform: scale(.85); } }
-@keyframes ms-throb { from { transform: translate(168px, 98px) scale(.9); } to { transform: translate(168px, 98px) scale(1.12); } }
+@keyframes ms-throb { from { transform: translate(178px, 150px) scale(.9); } to { transform: translate(178px, 150px) scale(1.12); } }
 @keyframes ms-twinkle { from { transform: scale(.6) rotate(0deg); opacity: .6; } to { transform: scale(1.1) rotate(20deg); opacity: 1; } }
 .reduce-motion .ms, .reduce-motion .ms-tw { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .ms, .ms-tw { animation: none !important; } }

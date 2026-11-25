@@ -73,6 +73,37 @@ function scan() {
 }
 const liveRigs = () => live().map(cv => RIGS.get(cv)).filter(r => r && r.loaded);
 
+
+/* ---------------- manga symbols ----------------
+   Drawn over her canvas in the same 500×500 space as her artboard
+   (cheeks at about x 155 / 340, y 255; top of her head at y ≈ 70). */
+const INK = '#6a4c74';
+const MANGA_SYMBOLS = `<svg viewBox="0 0 500 500" aria-hidden="true" focusable="false">
+  <g class="ms ms-sweat"><path d="M92 112c-14 22-22 34-22 46a22 22 0 0 0 44 0c0-12-8-24-22-46z" fill="#cfeeff" stroke="${INK}" stroke-width="4.5" stroke-linejoin="round"/><path d="M82 156a11 11 0 0 0 8 12" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>
+  <g class="ms ms-blush" fill="none" stroke="#ff6fa8" stroke-width="5" stroke-linecap="round">
+    ${[0, 1, 2, 3, 4].map(i => `<path d="M${124 + i * 14} 272l10-22"/><path d="M${310 + i * 14} 278l10-22"/>`).join('')}
+  </g>
+  <g class="ms ms-anger" transform="translate(168 98)" fill="none" stroke="#ff4f78" stroke-width="8" stroke-linecap="round">
+    <path d="M-26-8q16 0 16-18M8-26q0 16 18 16M26 8q-16 0-16 18M-8 26q0-16-18-16"/>
+  </g>
+  <g class="ms ms-sparkle">
+    ${[[78, 214, 26], [438, 292, 18], [262, 40, 14]].map(([x, y, r], i) => `<path class="ms-tw" style="animation-delay:${i * .25}s" d="M${x} ${y - r}Q${x + r * .16} ${y - r * .16} ${x + r} ${y}Q${x + r * .16} ${y + r * .16} ${x} ${y + r}Q${x - r * .16} ${y + r * .16} ${x - r} ${y}Q${x - r * .16} ${y - r * .16} ${x} ${y - r}Z" fill="#ffe08a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`).join('')}
+    <circle cx="78" cy="214" r="5" fill="#fff"/>
+  </g>
+  <g class="ms ms-zzz" font-family="'Mochiy Pop One', 'Zen Maru Gothic', sans-serif" font-weight="700" fill="#fff" stroke="${INK}" stroke-width="4" paint-order="stroke">
+    <text x="56" y="120" font-size="44">Z</text><text x="94" y="80" font-size="34">z</text><text x="124" y="50" font-size="26">z</text>
+  </g>
+</svg>`;
+// which symbol each reaction shows, and for how long
+const REACTION_SYMBOL = { pet: 'blush', giggle: 'blush', hello: 'blush', saving: 'sparkle', party: 'sparkle', income: 'sparkle', over: 'anger', deleted: 'sweat', wake: 'sweat' };
+const symTimers = new WeakMap();
+function showSymbol(cv, sym, ms) {
+  const box = cv.closest('.yutu-box'); if (!box) return;
+  box.dataset.sym = sym;
+  clearTimeout(symTimers.get(box));
+  symTimers.set(box, setTimeout(() => { if (box.dataset.sym === sym) delete box.dataset.sym; }, Math.max(ms, 1600)));
+}
+
 /* ---------------- reactions ---------------- */
 let sayHook = null, busyUntil = 0;
 const REACTIONS = {
@@ -96,6 +127,7 @@ export function yutuReact(kind, { say, soft = false } = {}) {
   if (soft && now < busyUntil) return;
   busyUntil = now + r.ms;
   if (!calm()) liveRigs().forEach(rig => vmFire(rig, kind));
+  if (REACTION_SYMBOL[kind]) live().forEach(cv => showSymbol(cv, REACTION_SYMBOL[kind], r.ms + 600));
   const line = say || (r.say && r.say[Math.floor(Math.random() * r.say.length)]);
   if (line && sayHook) sayHook(line);
 }
@@ -114,7 +146,7 @@ export function yutuDress(outfit = {}) {
 export function yutuSVG(mood = 'calm', { mini = false, interactive = false, title = 'Yutu the Jade Rabbit' } = {}) {
   const label = `${title}, ${{ calm: 'smiling', happy: 'smiling', worried: 'looking worried', party: 'celebrating', sleepy: 'dozing' }[mood] || 'smiling'}`;
   const role = interactive ? `role="button" tabindex="0" aria-label="${label}. Tap to pet her."` : `role="img" aria-label="${label}"`;
-  return `<canvas class="yutu-rive${mini ? ' mini' : ''}${interactive ? ' interactive' : ''}" width="500" height="500" data-mood="${mood}" ${role}></canvas>`;
+  return `<span class="yutu-box"><canvas class="yutu-rive${mini ? ' mini' : ''}${interactive ? ' interactive' : ''}" width="500" height="500" data-mood="${mood}" ${role}></canvas><span class="manga-sym">${MANGA_SYMBOLS}</span></span>`;
 }
 
 /* ---------------- behaviour ---------------- */
@@ -142,6 +174,7 @@ export function initYutu({ say } = {}) {
   });
   const setDozing = on => {
     dozing = on;
+    live().forEach(cv => cv.closest('.yutu-box')?.classList.toggle('dozing', on));
     live().forEach(cv => { const rig = RIGS.get(cv); if (rig?.loaded) vmSet(rig, 'mood', moodOf(cv)); });
   };
   const activity = () => {

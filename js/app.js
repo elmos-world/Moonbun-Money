@@ -920,7 +920,7 @@ function flipRow(c, en, type) {
    Every drawing the app adds (gacha machine, capsules, prizes, omikuji, plants, stickers,
    letters…) is recoloured into the site palette and given the hand-drawn pen wobble.
    Icons, the moon, the spending chart and Yutu's symbols are drawn that way already. */
-const SKIP_INK = '.ic, .moon, .donut, .manga-sym, .hh, [data-no-ink]';
+const SKIP_INK = '.ic, .moon, .donut, .manga-sym, .hh, .qv, [data-no-ink]'; // .qv: Quiver accessory pictures keep their own colours
 const HEX = /#[0-9a-fA-F]{6}\b/g;
 function inkSVG(svg) {
   if (svg.dataset.inked || svg.matches(SKIP_INK) || svg.closest('.manga-sym')) return;

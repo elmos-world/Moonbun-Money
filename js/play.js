@@ -82,7 +82,7 @@ export const ITEMS = [
     art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#ffd3e6"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#ffd3e6"/>${heart(56, 60, 1.5, '#ff7eb3')}${heart(144, 60, 1.5, '#ff7eb3')}${star(84, 36, 8, '#fff')}${star(172, 36, 8, '#fff')}` },
 ];
 // Yutu's accessory pictures match the drawings she wears in her .riv
-for (const it of ITEMS) if (WEAR_ART[it.id]) Object.assign(it, WEAR_ART[it.id]);
+for (const it of ITEMS) if (WEAR_ART[it.id]) Object.assign(it, WEAR_ART[it.id], { qv: true });
 
 // Bao's capsule machine: things he wears in his own .riv (bao.js). `art` is only the thumbnail.
 const INKC = '#2f2a33', ROSE = '#e8c4cc', SAGEC = '#cfe0d6', GOLDC = '#e8d3a0';
@@ -111,10 +111,10 @@ export const BAO_ITEMS = [
   { id: 'bao-hearts', who: 'bao', slot: 'eyes', rarity: 1, name: 'Cheek heart stickers', rive: { eyewear: 3 }, thumb: '0 0 200 110',
     art: `<ellipse cx="56" cy="62" rx="40" ry="26" fill="#f3e2e5"/><ellipse cx="144" cy="62" rx="40" ry="26" fill="#f3e2e5"/>${heart(56, 60, 1.5, '#d8a7b2')}${heart(144, 60, 1.5, '#d8a7b2')}` },
 ];
-// Bao wears the same Quiver drawings as Yutu for the accessories they share
+// Bao's accessory pictures: the same Quiver drawings he wears (shared ones are Yutu's)
 const BAO_SAME = { 'bao-sakura': 'sakura-crown', 'bao-witch': 'witch-hat', 'bao-bowtie': 'bow-tie', 'bao-coin': 'coin-pendant',
   'bao-glasses': 'round-glasses', 'bao-shades': 'heart-shades', 'bao-hearts': 'cheek-hearts' };
-for (const it of BAO_ITEMS) if (WEAR_ART[BAO_SAME[it.id]]) Object.assign(it, WEAR_ART[BAO_SAME[it.id]]);
+for (const it of BAO_ITEMS) { const w = WEAR_ART[BAO_SAME[it.id]] || WEAR_ART[it.id]; if (w) Object.assign(it, w, { qv: true }); }
 
 export const BAO_SLOTS = [{ id: 'hat', name: 'Hats' }, { id: 'neck', name: 'Necklaces' }, { id: 'eyes', name: 'Glasses' }];
 // what Bao wears in his .riv for the items equipped (his ribbon and nothing else when nothing is chosen)
@@ -134,9 +134,12 @@ const DEFS = `<defs><radialGradient id="plNight" cx="50%" cy="40%" r="60%"><stop
 export const itemById = id => ITEMS.find(i => i.id === id) || BAO_ITEMS.find(i => i.id === id);
 export const RARITY = { 1: { name: 'Cute', stars: '★' }, 2: { name: 'Rare', stars: '★★' }, 3: { name: 'Super rare', stars: '★★★' } };
 
+let thumbSeq = 0;
 export function itemThumb(it, size = 72) {
   const vb = it.thumb || '0 0 500 500';
-  return `<svg class="pl-thumb" viewBox="${vb}" width="${size}" height="${size}" aria-hidden="true">${DEFS}${it.art}</svg>`;
+  // Quiver pictures carry gradients: give every copy its own ids, or a hidden copy's ids break the visible one
+  const art = it.qv ? `<g fill="none">${it.art.replace(/(id="|url\(#|href="#)/g, `$1t${++thumbSeq}_`)}</g>` : it.art; // Quiver SVGs default to no fill
+  return `<svg class="pl-thumb${it.qv ? ' qv' : ''}" viewBox="${vb}" width="${size}" height="${size}" aria-hidden="true">${DEFS}${art}</svg>`;
 }
 // layers that sit behind and in front of Yutu's canvas
 export function wearLayers(equipped = {}) {

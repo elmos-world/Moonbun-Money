@@ -1969,3 +1969,5 @@ svg.machine-ink, svg.capsule-ink, svg.omikuji-ink { filter: none; overflow: visi
 
 /* Bao's wardrobe preview is wide (his artboard is 900×483) */
 .ward-preview.bao-preview { width: 100%; max-width: 340px; background: none; padding: 0; }
+/* Quiver-drawn accessory pictures are already hand-inked and coloured: no ink filter or desaturation */
+.ward-item svg.qv { filter: none; }

@@ -115,26 +115,105 @@ export function rollGacha(owned = []) {
   return list[Math.floor(Math.random() * list.length)];
 }
 // the capsule machine (drawn), with the window showing capsules inside
+/* ---------- hand-drawn helpers (manga ink sketch) ---------- */
+const INK = '#2f2a33';
+// tiny seeded random so every drawing wobbles the same way each time
+const rng = seed => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+const fx = n => n.toFixed(1);
+// a closed wobbly shape through points on a circle
+function wobCircle(cx, cy, r, seed = 1, amt = 1.6, n = 40) {
+  const R = rng(seed * 97 + 13), pts = [];
+  for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2, rr = r + (R() - .5) * amt * 2; pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); }
+  return smooth(pts, true);
+}
+// a wobbly polygon (corners kept, edges bent a little)
+function wobPoly(pts, seed = 1, amt = 1.4, steps = 6) {
+  const R = rng(seed * 31 + 7), out = [];
+  pts.forEach((p, i) => {
+    const q = pts[(i + 1) % pts.length];
+    for (let t = 0; t < steps; t++) { const u = t / steps; out.push([p[0] + (q[0] - p[0]) * u + (t ? (R() - .5) * amt * 2 : 0), p[1] + (q[1] - p[1]) * u + (t ? (R() - .5) * amt * 2 : 0)]); }
+  });
+  return smooth(out, true, .12);
+}
+function smooth(pts, closed, k = .18) {
+  const P = i => pts[(i + pts.length) % pts.length];
+  let d = `M${fx(pts[0][0])} ${fx(pts[0][1])}`;
+  const n = closed ? pts.length : pts.length - 1;
+  for (let i = 0; i < n; i++) {
+    const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+    d += `C${fx(p1[0] + (p2[0] - p0[0]) * k)} ${fx(p1[1] + (p2[1] - p0[1]) * k)} ${fx(p2[0] - (p3[0] - p1[0]) * k)} ${fx(p2[1] - (p3[1] - p1[1]) * k)} ${fx(p2[0])} ${fx(p2[1])}`;
+  }
+  return d + (closed ? 'Z' : '');
+}
+// ink the shape twice: a firm line plus a lighter, slightly shifted "pencil" line
+const inked = (d, fill = 'none', w = 3) => `<path d="${d}" fill="${fill}" stroke="${INK}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+const pencil = (d, dx = 1.5, dy = -1) => `<path d="${d}" transform="translate(${dx} ${dy})" fill="none" stroke="${INK}" stroke-width="1.2" stroke-opacity=".35" stroke-dasharray="40 10 14 8 70 12"/>`;
+// diagonal hatching clipped to a shape, like pen shading
+function hatch(id, d, gap = 7, ang = 45, op = .35, w = 1.3) {
+  const lines = [];
+  for (let x = -480; x < 480; x += gap) lines.push(`M${x} -40L${x + 560} 520`);
+  return `<clipPath id="${id}"><path d="${d}"/></clipPath><g clip-path="url(#${id})"><path d="${lines.join('')}" transform="rotate(${ang - 45} 210 235)" stroke="${INK}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round"/></g>`;
+}
+const screentone = (id, d, op = .3, size = 7) => `<pattern id="${id}p" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><circle cx="${size / 2}" cy="${size / 2}" r="1.3" fill="${INK}" fill-opacity="${op}"/></pattern><path d="${d}" fill="url(#${id}p)"/>`;
+const inkStar = (x, y, r) => `<path d="M${x} ${y - r}Q${x + r * .16} ${y - r * .16} ${x + r} ${y}Q${x + r * .16} ${y + r * .16} ${x} ${y + r}Q${x - r * .16} ${y + r * .16} ${x - r} ${y}Q${x - r * .16} ${y - r * .16} ${x} ${y - r}Z" fill="${INK}"/>`;
+
 export function machineSVG() {
-  const caps = [[150, 120, '#ffc2d9'], [205, 100, '#c8f7e1'], [255, 125, '#e2d6ff'], [180, 160, '#fff2a8'], [235, 168, '#cfe6ff'], [285, 160, '#ffd3e6'], [140, 175, '#bdf0d4']];
-  return `<svg class="machine" viewBox="0 0 420 470" role="img" aria-label="Capsule machine">
-    <ellipse cx="210" cy="452" rx="130" ry="12" fill="#000" opacity=".07"/>
-    <path d="M110 250h200l18 190H92z" fill="var(--accent-soft)" ${SW}/>
-    <path d="M120 260h180" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
-    <circle cx="210" cy="140" r="122" fill="#f4fbff" ${SW}/>
-    <g class="machine-caps">${caps.map(([x, y, c]) => `<g><circle cx="${x}" cy="${y}" r="24" fill="${c}" ${SW}/><path d="M${x - 24} ${y}h48" stroke="${L}" stroke-width="2.5"/><circle cx="${x - 8}" cy="${y - 10}" r="5" fill="#fff" opacity=".8"/></g>`).join('')}</g>
-    <path d="M110 92a122 122 0 0 1 90-72" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".9"/>
-    <rect x="96" y="240" width="228" height="22" rx="11" fill="var(--accent)" ${SW}/>
-    <g class="machine-knob"><circle cx="210" cy="330" r="34" fill="#fff" ${SW}/><rect x="200" y="300" width="20" height="60" rx="10" fill="var(--accent)" ${SW}/></g>
-    <rect x="236" y="384" width="56" height="40" rx="12" fill="#fff" ${SW}/><rect x="244" y="394" width="40" height="22" rx="8" fill="var(--accent-pale)"/>
-    <text x="150" y="410" font-size="26" font-family="var(--title)" fill="${L}">ガチャ</text>
-    ${star(52, 60, 12)}${star(372, 90, 9, '#ffd3e6')}${star(360, 300, 7, '#c8f7e1')}
+  const caps = [[150, 128, 0], [207, 104, 1], [262, 128, 2], [180, 172, 3], [238, 178, 4], [290, 170, 1], [134, 186, 2]];
+  const capFill = ['var(--mm-pink-soft, #f3e2e5)', '#fff', 'var(--accent-soft, #f1e3e6)', 'var(--mm-pink, #d9a7b0)', '#fff'];
+  const globe = wobCircle(210, 150, 120, 3, 1.8, 48);
+  const body = wobPoly([[110, 262], [310, 262], [330, 440], [90, 440]], 5, 1.6);
+  const band = wobPoly([[94, 240], [326, 240], [326, 264], [94, 264]], 8, 1.2, 8);
+  const chute = wobPoly([[236, 384], [294, 384], [294, 426], [236, 426]], 9, 1.2);
+  const knob = wobCircle(210, 330, 34, 11, 1.4, 28);
+  const handle = wobPoly([[200, 300], [220, 300], [220, 360], [200, 360]], 12, 1, 5);
+  return `<svg class="machine machine-ink" data-no-ink viewBox="0 0 420 470" role="img" aria-label="Capsule machine">
+    <defs></defs>
+    <!-- ground shading -->
+    <path d="M86 452q60 -5 124 -2t128 1M110 461q50 -3 100 -1" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
+    <!-- body -->
+    ${inked(body, '#fff')}
+    ${hatch('mh1', 'M111 263L168 263L158 439L92 439Z', 8, 60, .3)}
+    ${screentone('mt1', 'M240 280h80l12 156h-92z', .28)}
+    ${pencil(body)}
+    <!-- glass globe with capsules -->
+    ${inked(globe, '#fff')}
+    <g class="machine-caps">${caps.map(([x, y, c], n) => {
+      const cap = wobCircle(x, y, 24, 20 + n, 1, 22), top = `M${x - 24} ${y}A24 24 0 0 1 ${x + 24} ${y}Z`;
+      return `<g>${inked(cap, '#fff', 2.4)}<path d="${top}" fill="${capFill[c]}"/>${c === 3 ? hatch('mc' + n, top, 5, 30, .3, 1) : ''}${inked(cap, 'none', 2.4)}
+        <path d="M${x - 23} ${y + 1}q12 -2 23 0t23 -1" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M${x - 12} ${y - 12}q4 -5 10 -6" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></g>`;
+    }).join('')}</g>
+    ${screentone('mt2', `M300 110A120 120 0 0 1 250 262L330 262L330 110Z`, .18)}
+    <path d="M118 96q18 -44 76 -66" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".95"/>
+    <path d="M128 112q4 -10 10 -17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+    <path d="M300 214q14 -22 18 -52" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
+    ${pencil(globe, 2, -1.5)}
+    <!-- collar -->
+    ${inked(band, 'var(--mm-pink, #d9a7b0)')}
+    ${hatch('mh2', band, 5, 30, .25, 1)}
+    <!-- knob, with little manga motion marks -->
+    <g class="machine-knob">${inked(knob, '#fff')}${inked(handle, 'var(--mm-pink-soft, #f3e2e5)', 2.6)}</g>
+    <path d="M160 300q-8 12 -6 28M156 340q2 10 8 18M260 300q8 12 6 28M264 340q-2 10 -8 18" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+    <!-- prize chute -->
+    ${inked(chute, '#fff', 2.6)}
+    ${hatch('mh3', wobPoly([[244, 394], [286, 394], [286, 416], [244, 416]], 14, .8), 4, 45, .55, 1.2)}
+    <!-- hand-lettered sign -->
+    <text x="146" y="414" font-size="27" font-family="var(--hand, 'Hachi Maru Pop'), cursive" fill="${INK}" transform="rotate(-4 170 405)">ガチャ</text>
+    <path d="M144 422q30 4 62 -2" fill="none" stroke="var(--mm-pink-deep, #b47885)" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- sparkles -->
+    ${inkStar(54, 62, 13)}${inkStar(372, 92, 9)}${inkStar(362, 300, 7)}${inkStar(70, 300, 5)}
+    <g fill="var(--mm-pink, #d9a7b0)"><circle cx="390" cy="140" r="4"/><circle cx="40" cy="120" r="3"/></g>
   </svg>`;
 }
 export function capsuleSVG(color = '#ffc2d9') {
-  return `<svg class="capsule" viewBox="0 0 120 120" aria-hidden="true">
-    <g class="cap-top"><path d="M14 60a46 46 0 0 1 92 0z" fill="${color}" ${SW}/><circle cx="42" cy="36" r="8" fill="#fff" opacity=".8"/></g>
-    <g class="cap-bottom"><path d="M14 60h92a46 46 0 0 1-92 0z" fill="#fff" ${SW}/></g></svg>`;
+  const top = 'M14 60a46 46 0 0 1 92 0z', bottom = 'M14 60h92a46 46 0 0 1-92 0z';
+  const outline = wobCircle(60, 60, 46, 4, 1.3, 32);
+  return `<svg class="capsule capsule-ink" data-no-ink viewBox="0 0 120 120" aria-hidden="true">
+    <g class="cap-top">${inked(wobPoly([[14, 60], [30, 26], [60, 14], [90, 26], [106, 60]], 2, 1, 5), 'var(--mm-pink-soft, #f3e2e5)', 2.6)}
+      ${hatch('ch', top, 6, 30, .25, 1.1)}<path d="M34 38q6 -9 16 -13" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>
+    <g class="cap-bottom">${inked(wobPoly([[14, 60], [106, 60], [90, 94], [60, 106], [30, 94]], 3, 1, 5), '#fff', 2.6)}${screentone('ct', bottom, .22, 6)}</g>
+    ${pencil(outline, 1.5, -1)}
+  </svg>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -155,14 +234,24 @@ export const fortuneFor = dateStr => {
   return Math.abs(h) % FORTUNES.length;
 };
 export function omikujiBoxSVG() {
-  return `<svg class="omikuji-box" viewBox="0 0 140 160" aria-hidden="true">
-    <path d="M30 40h80v104a8 8 0 0 1-8 8H38a8 8 0 0 1-8-8z" fill="#ffb8d2" ${SW}/>
-    <path d="M30 40l40-24 40 24z" fill="#ff9cc5" ${SW}/>
-    <rect x="52" y="64" width="36" height="64" rx="6" fill="#fff" ${SW}/>
-    <text x="70" y="90" text-anchor="middle" font-size="18" fill="${L}" font-family="var(--title)">お</text>
-    <text x="70" y="116" text-anchor="middle" font-size="18" fill="${L}" font-family="var(--title)">み</text>
-    <g class="stick"><rect x="64" y="0" width="12" height="34" rx="5" fill="#fff1c2" ${SW}/></g>
-    ${star(118, 30, 8)}${star(22, 70, 6, '#fff6d6')}</svg>`;
+  const box = wobPoly([[30, 44], [110, 44], [110, 150], [30, 150]], 21, 1.1);
+  const roof = wobPoly([[24, 46], [70, 16], [116, 46]], 22, 1, 6);
+  const label = wobPoly([[52, 64], [88, 64], [88, 130], [52, 130]], 23, .8, 5);
+  const stick = wobPoly([[64, 2], [76, 2], [76, 36], [64, 36]], 24, .6, 4);
+  return `<svg class="omikuji-box omikuji-ink" data-no-ink viewBox="0 0 140 160" aria-hidden="true">
+    <g class="stick">${inked(stick, '#fff', 2)}<path d="M66 10h8" stroke="var(--mm-pink-deep, #b47885)" stroke-width="2" stroke-linecap="round"/></g>
+    ${inked(box, '#fff', 2.4)}
+    <!-- wood grain, drawn with a pen -->
+    <path d="M36 60q4 30 0 60M42 52q3 40 -2 90M98 56q-4 34 2 84M104 70q-2 30 0 60" fill="none" stroke="${INK}" stroke-width="1" stroke-linecap="round" opacity=".35"/>
+    ${hatch('oh', 'M30 120h80v30H30z', 5, 45, .3, 1)}
+    ${inked(roof, 'var(--mm-pink, #d9a7b0)', 2.4)}
+    ${hatch('or', 'M24 46L70 16L116 46Z', 4.5, 20, .28, 1)}
+    ${inked(label, '#fff', 1.8)}
+    <text x="70" y="90" text-anchor="middle" font-size="18" fill="${INK}" font-family="var(--title)">お</text>
+    <text x="70" y="116" text-anchor="middle" font-size="18" fill="${INK}" font-family="var(--title)">み</text>
+    ${pencil(box, 1.2, -1)}
+    ${inkStar(120, 30, 7)}${inkStar(20, 78, 5)}<circle cx="18" cy="40" r="2.5" fill="var(--mm-pink, #d9a7b0)"/>
+  </svg>`;
 }
 
 /* ------------------------------------------------------------------ */

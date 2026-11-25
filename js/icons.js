@@ -80,7 +80,7 @@ export const ICON_NAMES = Object.keys(D);
 // how light it is and whether it was pink. Because they are CSS variables, icons follow the palette.
 // The slight hand-drawn wobble comes from the #ink-rough filter in index.html (applied to .ic).
 const muteCache = new Map();
-function mute(hex) {
+export function mute(hex) {
   if (muteCache.has(hex)) return muteCache.get(hex);
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
   const max = Math.max(r, g, b), min = Math.min(r, g, b);

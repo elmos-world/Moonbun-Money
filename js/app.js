@@ -1,7 +1,7 @@
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
 import { initYutu, yutuReact, yutuDress } from './yutu.js';
-import { icon, iconFor } from './icons.js';
+import { icon, iconFor, mute } from './icons.js';
 import { ITEMS, SLOTS, RARITY, itemById, itemThumb, wearLayers, outfitFor, rollGacha, machineSVG, capsuleSVG, FORTUNES, fortuneFor, omikujiBoxSVG,
   HEARTS_PER_LEVEL, friendLevel, FRIEND_TITLES, plantSVG, STICKERS, stickerById, SOUNDS, letterHTML } from './play.js';
 import { parseAmount, parseCSV, guessColumns, rowsToEntries, nextDue, daysUntil, monthlyCost, cycleKey, payoff, payoffPlan, insights, compressImage, roundUp } from './plan.js';
@@ -462,12 +462,14 @@ function wearAround(inner) {
   const w = wearLayers(eq);
   return `<div class="wear-wrap">${w.back}${inner}${w.front}</div>`;
 }
+// a little pen-drawn heart (filled pink when earned, empty paper when not)
+const HAND_HEART = `<svg class="hh" viewBox="0 0 24 24"><path d="M12 20.2c-.4-.3-7.9-5-8.6-10.1-.4-3.1 1.6-5.4 4.2-5.5 2-.1 3.6 1.2 4.4 2.8.9-1.7 2.5-2.9 4.5-2.8 2.7.2 4.4 2.6 3.9 5.6-.8 4.9-8 9.7-8.4 10z"/><path class="hh-shine" d="M7.2 8.4c.3-1 1-1.6 1.9-1.8"/></svg>`;
 function friendMeter() {
   const h = play().hearts || 0, lv = friendLevel(h), inLv = h % HEARTS_PER_LEVEL;
   const title = FRIEND_TITLES[Math.min(lv - 1, FRIEND_TITLES.length - 1)];
   return `<div class="friend" role="group" aria-label="Friendship level ${lv}, ${title}, ${inLv} of ${HEARTS_PER_LEVEL} hearts">
     <span class="friend-lv">Lv ${lv}</span><span class="friend-title">${title}</span>
-    <span class="friend-hearts" aria-hidden="true">${Array.from({ length: HEARTS_PER_LEVEL }, (_, i) => `<i class="${i < inLv ? 'on' : ''}">♥</i>`).join('')}</span></div>`;
+    <span class="friend-hearts" aria-hidden="true">${Array.from({ length: HEARTS_PER_LEVEL }, (_, i) => `<i class="${i < inLv ? 'on' : ''}">${HAND_HEART}</i>`).join('')}</span></div>`;
 }
 function viewPlay() {
   const pl = play(), owned = pl.owned || [], eq = pl.equipped || {}, t = tickets();
@@ -879,6 +881,29 @@ function flipRow(c, en, type) {
   else if (c.cols.debit !== -1 && c.cols.credit !== -1) { row[c.cols.debit] = type === 'expense' ? String(en.amount) : ''; row[c.cols.credit] = type === 'income' ? String(en.amount) : ''; }
   return row;
 }
+/* ---------- manga ink pass ----------
+   Every drawing the app adds (gacha machine, capsules, prizes, omikuji, plants, stickers,
+   letters…) is recoloured into the site palette and given the hand-drawn pen wobble.
+   Icons, the moon, the spending chart and Yutu's symbols are drawn that way already. */
+const SKIP_INK = '.ic, .moon, .donut, .manga-sym, .hh, [data-no-ink]';
+const HEX = /#[0-9a-fA-F]{6}\b/g;
+function inkSVG(svg) {
+  if (svg.dataset.inked || svg.matches(SKIP_INK) || svg.closest('.manga-sym')) return;
+  svg.dataset.inked = '1';
+  svg.querySelectorAll('[fill], [stroke], [stop-color], [style]').forEach(el => {
+    for (const a of ['fill', 'stroke', 'stop-color']) { const v = el.getAttribute(a); if (v && HEX.test(v)) el.setAttribute(a, v.replace(HEX, mute)); HEX.lastIndex = 0; }
+    const st = el.getAttribute('style'); if (st && HEX.test(st)) el.setAttribute('style', st.replace(HEX, mute)); HEX.lastIndex = 0;
+  });
+  const vb = svg.viewBox?.baseVal;
+  svg.classList.add(vb && vb.width >= 100 ? 'inked-lg' : 'inked');
+}
+const inkAll = root => root.querySelectorAll?.('svg').forEach(inkSVG);
+new MutationObserver(list => list.forEach(m => m.addedNodes.forEach(n => {
+  if (n.nodeType !== 1) return;
+  if (n.tagName === 'svg') inkSVG(n); else inkAll(n);
+}))).observe(document.body, { childList: true, subtree: true });
+inkAll(document.body);
+
 /* ---------- History ---------- */
 function viewHistory() {
   const filters = [['all', 'All'], ['expense', 'Spent'], ['income', 'Earned'], ['saving', 'Saved']];

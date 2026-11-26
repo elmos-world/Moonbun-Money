@@ -994,7 +994,7 @@ function viewSettings() {
       <label class="toggle"><span>Soft sounds ♪</span><input type="checkbox" name="sound" ${st.sound !== false ? 'checked' : ''}></label>
       <label class="toggle"><span>Sparkles when I tap ✧</span><input type="checkbox" name="sparkles" ${st.sparkles !== false ? 'checked' : ''}></label>
       <label class="toggle"><span>Reduce motion (calmer animations)</span><input type="checkbox" name="reduceMotion" ${st.reduceMotion ? 'checked' : ''}></label>
-      <button class="btn primary" type="submit">Save settings</button>
+      <p class="tiny">Changes save by themselves ✧</p>
     </form>
   </section>
   <section class="card">
@@ -1065,6 +1065,7 @@ function burst(x, y, chars = ['✧', '♡', '☆', '✿'], n = 14) {
 }
 
 function setTab(tab) {
+  if (ui.tab === 'settings') autosaveSettings(true);
   ui.tab = tab;
   render();
   $('#view').focus({ preventScroll: true });
@@ -1464,7 +1465,29 @@ document.addEventListener('keydown', e => {
   selectChip(all[(i + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length]);
 });
 
+/* ---------- settings save themselves (no need to find the Save button) ---------- */
+function settingsPatch(f) {
+  return {
+    name: f.name.value.trim(), currency: f.currency.value,
+    savingsTarget: Math.max(0, parseFloat(f.savingsTarget.value) || 0), reduceMotion: f.reduceMotion.checked, sparkles: f.sparkles.checked, sound: f.sound.checked,
+  };
+}
+function settingsChanged(f) {
+  const p = settingsPatch(f), st = S.settings;
+  return p.name !== (st.name || '') || p.currency !== st.currency || p.savingsTarget !== (+st.savingsTarget || 0)
+    || p.reduceMotion !== !!st.reduceMotion || p.sparkles !== (st.sparkles !== false) || p.sound !== (st.sound !== false);
+}
+async function autosaveSettings(quiet = false) {
+  const f = $('#settings-form'); if (!f || !settingsChanged(f)) return;
+  await fire(store.saveSettings(settingsPatch(f)));
+  if (!quiet) toast('Saved ☾');
+}
+// closing or switching away from the app while typing still keeps what you typed
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') autosaveSettings(true); });
+addEventListener('pagehide', () => autosaveSettings(true));
+
 document.addEventListener('change', e => {
+  if (e.target.form?.id === 'settings-form' && e.target.name !== 'theme') autosaveSettings();
   if (e.target.name === 'theme') { document.documentElement.dataset.theme = e.target.value; fire(store.saveSettings({ theme: e.target.value })); toast('New palette ♡'); }
   if (e.target.name === 'type' && e.target.form?.id === 'add-form') e.target.form.dataset.type = e.target.value;
   if (e.target.dataset.budget) saveBudget(e.target);
@@ -1539,10 +1562,7 @@ document.addEventListener('submit', async e => {
     await saveList('debts', [...(S.settings.debts || []), { id: uid(), name: f.name.value.trim(), balance: Math.abs(bal), apr: Math.abs(parseAmount(f.apr.value) || 0), min: Math.abs(min) }]);
     toast('Debt added. Let’s beat it together (ง •̀_•́)ง');
   } else if (f.id === 'settings-form') {
-    await fire(store.saveSettings({
-      name: f.name.value.trim(), currency: f.currency.value,
-      savingsTarget: Math.max(0, parseFloat(f.savingsTarget.value) || 0), reduceMotion: f.reduceMotion.checked, sparkles: f.sparkles.checked, sound: f.sound.checked,
-    }));
+    await fire(store.saveSettings(settingsPatch(f)));
     toast('Settings saved ☾');
   } else if (f.id === 'auth-form') {
     const email = f.email.value.trim(), pw = f.password.value;

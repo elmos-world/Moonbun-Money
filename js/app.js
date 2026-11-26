@@ -34,11 +34,11 @@ const catById = id => CATS.find(c => c.id === id) || CATS.find(c => c.id === 'ot
 const catColor = id => { const c = catById(id), i = CATS.indexOf(c); return `color-mix(in srgb, ${c.color || `var(--c${(i % 8) + 1})`} 55%, #fbf8f3)`; };
 const GOAL_EMOJI = ['gem', 'laptop', 'plane', 'headphones', 'car', 'house', 'gradcap', 'piggy', 'gift', 'chest'];
 const THEMES = [
-  { id: 'sakura', name: 'Sakura', a: '#f77fb0', b: '#ffd9e8' },
-  { id: 'lavender', name: 'Lavender dream', a: '#a78bfa', b: '#e9e0ff' },
-  { id: 'melon', name: 'Melon soda', a: '#3cc794', b: '#d2f5e5' },
-  { id: 'peach', name: 'Peach mochi', a: '#ff9b73', b: '#ffe2d4' },
-  { id: 'sky', name: 'Ramune sky', a: '#6cb6f5', b: '#dbeeff' },
+  { id: 'sakura', name: 'Sakura', a: '#ff86bb', b: '#e6dcff' },
+  { id: 'lavender', name: 'Lavender dream', a: '#b195ff', b: '#ffe1ee' },
+  { id: 'melon', name: 'Melon soda', a: '#6fd6a8', b: '#fff3cc' },
+  { id: 'peach', name: 'Peach mochi', a: '#ff9a74', b: '#ffe8f2' },
+  { id: 'sky', name: 'Ramune sky', a: '#78bcff', b: '#ece6ff' },
 ];
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'KRW', 'MXN', 'ISK', 'SEK', 'NOK', 'DKK', 'INR', 'BRL'];
 

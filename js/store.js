@@ -117,10 +117,10 @@ async function cloudStore({ onData, onAuth }) {
     resetPassword: email => authMod.sendPasswordResetEmail(auth, email),
     signOut: () => authMod.signOut(auth),
     // receipt scanner: Claude reads the photo in the scanReceipt Cloud Function (functions/index.js)
-    scanReceipt: async (image, mediaType = 'image/jpeg') => {
+    scanReceipt: async (image, mediaType = 'image/jpeg', categories = []) => {
       const fnMod = await import(`${base}/firebase-functions.js`);
       const call = fnMod.httpsCallable(fnMod.getFunctions(app), 'scanReceipt', { timeout: 120000 });
-      return (await call({ image, mediaType, today: new Date().toISOString().slice(0, 10) })).data;
+      return (await call({ image, mediaType, categories, today: new Date().toISOString().slice(0, 10) })).data;
     },
   };
 }

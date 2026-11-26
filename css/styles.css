@@ -2248,3 +2248,60 @@ input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: sc
 .scan-total input { width: 110px; text-align: right; font-size: 1rem; }
 .scan-stage { height: min(52vh, 520px); width: auto; margin: 0 auto; }
 .scan-dialog { max-height: 94vh; overflow: auto; }
+
+/* ---------- layout: centred and balanced on every screen ---------- */
+/* header: logo | month banner (centred) | settings */
+.topbar { display: grid !important; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 12px; }
+.topbar .brand { justify-self: start; min-width: 0; }
+.topbar > .icon-btn { justify-self: end; }
+.topbar .month-nav { justify-self: center; }
+@media (max-width: 639px) {
+  .topbar { grid-template-columns: 1fr auto; row-gap: 10px; }
+  .topbar .month-nav { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
+}
+/* Home card: Yutu's buddy and backdrop stay inside the card */
+.hero-rabbit { width: min(300px, 100%); padding: 0 6px; box-sizing: border-box; }
+@keyframes wear-buddy { 0%, 100% { transform: scale(1.12) translateY(0); } 50% { transform: scale(1.12) translateY(-8px) rotate(-4deg); } }
+.reduce-motion .wear-buddy { transform: scale(1.12); }
+/* phones: everything in the Home card is centred, with room for the + button */
+@media (max-width: 639px) {
+  .hero .hero-moon { justify-content: center; justify-items: start; margin: 0 auto; width: max-content; max-width: 100%; }
+  .hero-text { justify-items: center !important; text-align: center; }
+  .hero-text .bubble { margin-left: auto; margin-right: auto; width: 100%; box-sizing: border-box; }
+  .hero-text > * { margin-left: auto; margin-right: auto; }
+  #view { padding-bottom: 96px; }
+}
+.topbar .brand { white-space: nowrap; }
+@media (min-width: 640px) and (max-width: 940px) {
+  .topbar .brand { font-size: .86em; }
+  .topbar .brand-moon { transform: scale(.85); }
+}
+
+/* ---------- category editor ---------- */
+.cat-edit { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 8px; max-height: 46vh; overflow: auto; }
+.cat-edit li { display: grid; grid-template-columns: 42px 1fr 38px 30px; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 18px; background: #fff;
+  box-shadow: inset 0 0 0 2px var(--mg-pink-3, #ffe8f2); }
+.cat-edit li.picking { box-shadow: inset 0 0 0 2px var(--mg-pink, #ff9cc7), 0 4px 12px rgba(255, 140, 190, .25); }
+.cat-edit .cat-ic { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--mg-pink-3, #ffe8f2); cursor: pointer; display: grid; place-items: center; }
+.cat-edit input:not([type=color]) { min-width: 0; font: inherit; padding: 7px 10px; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--mg-lav-2, #e6dcff); color: inherit; }
+.cat-edit input[type=color] { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.cat-edit input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+.cat-edit input[type=color]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--mg-gold, #f2c96d); }
+.cat-edit .icon-btn { width: 28px; height: 28px; font-size: .75rem; }
+.cat-lock { text-align: center; color: var(--mg-gold, #f2c96d); }
+.cat-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 6px; max-height: 24vh; overflow: auto; padding: 4px; }
+.cat-icons button { border: 0; background: #fff; border-radius: 12px; padding: 6px; cursor: pointer; box-shadow: inset 0 0 0 1.5px var(--mg-lav-2, #e6dcff); }
+.cat-icons button.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold, #f2c96d); background: var(--mg-pink-3, #ffe8f2); }
+
+/* ---------- my money ---------- */
+.wallet { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: linear-gradient(160deg, #fff, var(--mg-gold-2, #fff0c4)) !important; }
+.wallet-row { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.wallet-ic { flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--mg-gold, #f2c96d), 0 4px 12px rgba(242, 201, 109, .4); }
+.wallet h2 { padding: 0 !important; margin: 0 !important; background: none !important; font-size: 1.05rem !important; }
+.wallet h2::before { content: none !important; }
+.wallet-amt { margin: 2px 0 0; font-family: var(--title); font-size: 1.9rem; color: var(--mg-plum, #6b4672); }
+.wallet-amt.neg { color: #d0457f; }
+.wallet .tiny { margin: 2px 0 0; }
+@media (max-width: 639px) { .wallet { justify-content: center; text-align: left; } .wallet > .btn { width: 100%; } }

@@ -22,10 +22,23 @@ const CATEGORIES = {
   other: 'anything else',
 };
 
-const SYSTEM = `You read photos of shopping receipts for a cute personal budgeting app.
+// the user's own budget categories come with each request (Edit categories in the app); these are the defaults
+function categoriesFrom(list) {
+  if (!Array.isArray(list)) return CATEGORIES;
+  const out = {};
+  for (const c of list.slice(0, 30)) {
+    const id = String(c?.id ?? '').trim(), label = String(c?.label ?? '').trim();
+    if (/^[a-z0-9-]{1,32}$/.test(id) && label) out[id] = (CATEGORIES[id] && id === label.toLowerCase()) ? CATEGORIES[id] : label.slice(0, 40);
+  }
+  if (!Object.keys(out).length) return CATEGORIES;
+  if (!out.other) out.other = CATEGORIES.other;
+  return out;
+}
+
+const systemFor = cats => `You read photos of shopping receipts for a cute personal budgeting app.
 Reply with one JSON object and nothing else (no code fences, no comments), in exactly this shape:
 {"isReceipt": true, "merchant": "Store name", "date": "YYYY-MM-DD or null", "currency": "ISO code like USD, or null",
- "items": [{"name": "short item name", "amount": 3.49, "category": "food"}],
+ "items": [{"name": "short item name", "amount": 3.49, "category": "${Object.keys(cats)[0]}"}],
  "subtotal": 12.30 or null, "tax": 0.98 or null, "total": 13.28}
 
 Rules:
@@ -33,7 +46,7 @@ Rules:
   Leave out tax, tips, totals, payment and change lines; put tax in "tax".
 - name: what the item is in plain words (expand receipt abbreviations when you are sure), at most 40 characters.
 - amount and total: numbers, not strings, with no currency signs. total is the amount actually paid.
-- category: one of ${Object.keys(CATEGORIES).join(', ')}. Meanings: ${Object.entries(CATEGORIES).map(([k, v]) => `${k} = ${v}`).join('; ')}.
+- category: exactly one of these ids: ${Object.keys(cats).join(', ')}. What each id is for: ${Object.entries(cats).map(([k, v]) => `${k} = ${v}`).join('; ')}. Use "other" when nothing fits.
 - date: the purchase date printed on the receipt, or null if you cannot read it.
 - If part of the receipt is unreadable, include what you can read; never invent items or prices.
 - If the photo is not a receipt, reply {"isReceipt": false}.`;
@@ -48,13 +61,13 @@ function parseReply(text) {
 }
 
 // keep only well-formed fields, so the app never has to trust the model's JSON blindly
-function clean(raw) {
+function clean(raw, cats = CATEGORIES) {
   if (!raw || raw.isReceipt === false) return { isReceipt: false };
   const items = (Array.isArray(raw.items) ? raw.items : [])
     .map(it => ({
       name: String(it?.name ?? '').trim().slice(0, 40) || 'Item',
       amount: money(it?.amount),
-      category: Object.hasOwn(CATEGORIES, it?.category) ? it.category : 'other',
+      category: Object.hasOwn(cats, it?.category) ? it.category : 'other',
     }))
     .filter(it => it.amount !== null && it.amount >= 0)
     .slice(0, 80);
@@ -81,6 +94,7 @@ export const scanReceipt = onCall(
       throw new HttpsError('invalid-argument', 'That photo could not be sent. Please try again.');
     }
 
+    const cats = categoriesFrom(request.data?.categories);
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
     let response;
     try {
@@ -92,7 +106,7 @@ export const scanReceipt = onCall(
         // if a safety classifier declines, the API retries on Anthropic's recommended fallback model
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
-        system: SYSTEM,
+        system: systemFor(cats),
         messages: [{
           role: 'user',
           content: [
@@ -113,6 +127,6 @@ export const scanReceipt = onCall(
     const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
     const parsed = parseReply(text);
     if (!parsed) throw new HttpsError('internal', 'The receipt could not be read. Try a clearer photo.');
-    return clean(parsed);
+    return clean(parsed, cats);
   },
 );

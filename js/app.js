@@ -1,4 +1,5 @@
 import { openScanner } from './scanner.js';
+import { ICON_ART } from './magic-art.js';
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
 import { initYutu, yutuReact, yutuDress } from './yutu.js';
@@ -10,7 +11,7 @@ import { parseAmount, parseCSV, guessColumns, rowsToEntries, nextDue, daysUntil,
 
 /* ================= constants & helpers ================= */
 // Fixed order = fixed color (--c1..--c8). A category keeps its color everywhere.
-const CATS = [
+const BASE_CATS = [
   { id: 'food', label: 'Food', emoji: 'food' },
   { id: 'fun', label: 'Fun', emoji: 'fun' },
   { id: 'shopping', label: 'Shopping', emoji: 'shopping' },
@@ -20,9 +21,17 @@ const CATS = [
   { id: 'selfcare', label: 'Self-care', emoji: 'selfcare' },
   { id: 'other', label: 'Other', emoji: 'other' },
 ];
-const catById = id => CATS.find(c => c.id === id) || CATS[7];
+// the categories in use: your own list from settings (Edit categories), or the built-in eight
+const CATS = [...BASE_CATS];
+function syncCats() {
+  const mine = Array.isArray(S?.settings?.categories) && S.settings.categories.length ? S.settings.categories : BASE_CATS;
+  const list = mine.filter(c => c && c.id && c.label);
+  if (!list.some(c => c.id === 'other')) list.push(BASE_CATS[7]);
+  CATS.splice(0, CATS.length, ...list);
+}
+const catById = id => CATS.find(c => c.id === id) || CATS.find(c => c.id === 'other') || CATS[CATS.length - 1];
 // category colours, softened toward paper so they sit with the ink-and-paper look
-const catColor = id => `color-mix(in srgb, var(--c${CATS.indexOf(catById(id)) + 1}) 55%, #fbf8f3)`;
+const catColor = id => { const c = catById(id), i = CATS.indexOf(c); return `color-mix(in srgb, ${c.color || `var(--c${(i % 8) + 1})`} 55%, #fbf8f3)`; };
 const GOAL_EMOJI = ['gem', 'laptop', 'plane', 'headphones', 'car', 'house', 'gradcap', 'piggy', 'gift', 'chest'];
 const THEMES = [
   { id: 'sakura', name: 'Sakura', a: '#f77fb0', b: '#ffd9e8' },
@@ -219,6 +228,8 @@ function viewHomeBase() {
       <span class="sfx sfx-b" lang="ja" aria-hidden="true">${{ worried: '>_<', party: '♡', sleepy: '☾' }[mood] || '♡'}</span></div>
   </section>
 
+  ${walletHTML()}
+
   <section class="tiles" aria-label="This month at a glance">
     ${tile('purse', 'Earned', st.income)}
     ${tile('dango', 'Spent', st.spent)}
@@ -261,7 +272,7 @@ const emptyHTML = msg => `<div class="empty"><div class="mini">${rabbitSVG('slee
 
 function txHTML(t) {
   let ic, what, color, cls, sign;
-  if (t.type === 'expense') { const c = catById(t.category); ic = c.id; what = t.note || c.label; color = catColor(c.id); cls = 'expense'; sign = '−'; }
+  if (t.type === 'expense') { const c = catById(t.category); ic = c.emoji || c.id; what = t.note || c.label; color = catColor(c.id); cls = 'expense'; sign = '−'; }
   else if (t.type === 'income') { ic = 'purse'; what = t.note || 'Income'; color = 'var(--jade)'; cls = 'income'; sign = '+'; }
   else { const g = S.goals.find(g => g.id === t.goalId); ic = g ? iconFor(g.emoji) : 'coin'; what = t.note || (g ? `Saved for ${g.name}` : 'Savings'); color = 'var(--gold)'; cls = 'saving'; sign = '🪙 '; }
   const kind = t.type === 'expense' ? catById(t.category).label : t.type === 'income' ? 'Earned' : 'Saved';
@@ -291,14 +302,14 @@ function viewSpendingBase() {
     </section>
   </div>
   <section class="card" aria-labelledby="bud-title">
-    <div class="card-head"><h2 id="bud-title" data-jp="予算">Monthly budgets</h2><span class="tiny">Total ${money(st.budgetTotal, true)}</span></div>
+    <div class="card-head"><h2 id="bud-title" data-jp="予算">Monthly budgets</h2><span class="head-btns"><span class="tiny">Total ${money(st.budgetTotal, true)}</span><button class="btn small ghost" data-action="edit-cats">${icon('gear', 18)} Edit categories</button></span></div>
     <p class="tiny">Drag the sliders (or type a number) to set how much each category gets per month.</p>
     ${CATS.map(c => {
       const lim = +budgets[c.id] || 0, sp = st.byCat[c.id];
       const pct = lim ? (sp / lim) * 100 : (sp ? 100 : 0);
       const over = sp > lim && lim > 0;
       return `<div class="budget-row">
-        <div class="budget-top"><span class="name"><span class="swatch" style="--swatch:${catColor(c.id)}"></span>${icon(c.id, 22)}${c.label}</span>
+        <div class="budget-top"><span class="name"><span class="swatch" style="--swatch:${catColor(c.id)}"></span>${icon(c.emoji || c.id, 22)}${c.label}</span>
           <span><b>${money(sp)}</b> <span class="muted">/ ${money(lim, true)}</span></span></div>
         <div class="bar ${over ? 'over' : ''}" role="progressbar" aria-label="${c.label}: spent of budget" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}">
           <span style="width:${Math.min(100, pct)}%;background-color:${catColor(c.id)}"></span></div>
@@ -1049,13 +1060,103 @@ function setTab(tab) {
   window.scrollTo({ top: 0, behavior: S.settings.reduceMotion ? 'auto' : 'smooth' });
 }
 
+/* ---------- my money: what I have now; spending is taken off it, earnings added ---------- */
+// settings.wallet = { amount, since }: the amount you told Yutu, and when. Entries added after that change it:
+// money earned is added; money spent or moved into Bao's hoard is taken off.
+function walletNow() {
+  const w = S.settings.wallet; if (!w || !(w.since)) return null;
+  const since = w.since, d0 = new Date(since);
+  const sinceDay = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`; // your local date
+  let v = +w.amount || 0;
+  for (const t of S.transactions) {
+    if (!t.createdAt || t.createdAt <= since || (t.date || '') < sinceDay) continue;
+    const a = +t.amount || 0;
+    if (t.type === 'income') v += a; else if (t.type === 'expense' || t.type === 'saving') v -= a;
+  }
+  return Math.round(v * 100) / 100;
+}
+function walletHTML() {
+  const now = walletNow();
+  if (now === null) return `<section class="card wallet" aria-labelledby="wallet-title">
+    <div class="wallet-row"><span class="wallet-ic">${icon('purse', 40)}</span>
+      <div><h2 id="wallet-title" data-jp="お財布">My money</h2><p class="tiny">Tell Yutu how much money you have right now, and she’ll take off what you spend and add what you earn ✧</p></div></div>
+    <button class="btn primary" data-action="wallet-set">${icon('coin', 20)} Set my money</button>
+  </section>`;
+  return `<section class="card wallet" aria-labelledby="wallet-title">
+    <div class="wallet-row"><span class="wallet-ic">${icon('purse', 40)}</span>
+      <div><h2 id="wallet-title" data-jp="お財布">My money</h2>
+        <p class="wallet-amt ${now < 0 ? 'neg' : ''}">${money(now)}</p>
+        <p class="tiny">Spending is taken off, earnings are added ✧ Set on ${new Date(S.settings.wallet.since).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p></div></div>
+    <button class="btn small ghost" data-action="wallet-set">${icon('gear', 18)} Update</button>
+  </section>`;
+}
+function openWallet() {
+  const now = walletNow();
+  playDialog(`<div class="dialog-head"><h2 id="play-title">${icon('purse', 26)} My money</h2><button type="button" class="icon-btn" data-action="close-dialog" aria-label="Close">✕</button></div>
+    <form id="wallet-form" class="wallet-form" novalidate>
+      <label class="field"><span>How much money do you have right now?</span>
+        <input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${now !== null ? now.toFixed(2) : ''}" required></label>
+      <p class="tiny">Count your cash and bank account together (or just the account you spend from). From now on, purchases you log are taken off and money you earn is added. Moving money into Bao’s hoard takes it off too.</p>
+      <p class="err" id="wallet-err" role="alert"></p>
+      <div class="reveal-actions"><button class="btn primary" type="submit">Save ♡</button>
+      ${now !== null ? '<button class="btn ghost" type="button" data-action="wallet-clear">Stop tracking</button>' : ''}</div>
+    </form>`, 'wallet');
+  setTimeout(() => $('#wallet-form input[name=amount]')?.focus(), 30);
+}
+async function saveWallet(f) {
+  const amount = Math.round(parseFloat(String(f.amount.value).replace(/[^0-9.,-]/g, '').replace(',', '.')) * 100) / 100;
+  if (!Number.isFinite(amount)) { $('#wallet-err').textContent = 'Please enter an amount (・x・)'; return; }
+  $('#play-dialog').close();
+  await fire(store.saveSettings({ wallet: { amount, since: new Date().toISOString() } }));
+  toast(`Yutu will keep track of your ${money(amount)} ♡`);
+}
+
+/* ---------- your own budget categories ---------- */
+const CAT_COLORS = ['#ff9cc7', '#c8b2ff', '#8fdcc0', '#f2c96d', '#8fc4ff', '#ffb38a', '#e59ad8', '#9adfe8', '#c9d97a', '#f7a3a8'];
+const slug = name => (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cat').slice(0, 24);
+function openCatEditor() {
+  ui.catDraft = CATS.map((c, i) => ({ ...c, emoji: c.emoji || c.id, color: c.color || CAT_COLORS[i % CAT_COLORS.length] }));
+  ui.catPick = null;
+  renderCatEditor();
+}
+function renderCatEditor() {
+  const d = ui.catDraft, pick = ui.catPick;
+  playDialog(`<div class="dialog-head"><h2 id="play-title">${icon('gear', 26)} Your categories</h2><button type="button" class="icon-btn" data-action="close-dialog" aria-label="Close">✕</button></div>
+    <p class="tiny">Rename them, give each an icon and a colour, add your own or remove ones you don’t use. “Other” stays as the catch-all. Past purchases in a removed category move to Other.</p>
+    <ul class="cat-edit">${d.map((c, i) => `<li class="${pick === i ? 'picking' : ''}">
+      <button type="button" class="cat-ic" data-action="cat-pick" data-i="${i}" aria-label="Change the icon for ${esc(c.label)}">${icon(c.emoji, 26)}</button>
+      <input data-catfield="label" data-i="${i}" value="${esc(c.label)}" maxlength="20" aria-label="Category name">
+      <input type="color" data-catfield="color" data-i="${i}" value="${c.color}" aria-label="Colour for ${esc(c.label)}">
+      ${c.id === 'other' ? '<span class="cat-lock" title="Always kept">✦</span>' : `<button type="button" class="icon-btn" data-action="cat-del" data-i="${i}" aria-label="Remove ${esc(c.label)}">✕</button>`}
+    </li>`).join('')}</ul>
+    ${pick !== null && d[pick] ? `<p class="tiny">Pick an icon for <b>${esc(d[pick].label)}</b>:</p><div class="cat-icons">${Object.keys(ICON_ART).map(n => `<button type="button" data-action="cat-icon" data-n="${n}" class="${d[pick].emoji === n ? 'on' : ''}" aria-label="${n}">${icon(n, 26)}</button>`).join('')}</div>` : ''}
+    <div class="reveal-actions">
+      ${d.length < 16 ? `<button type="button" class="btn ghost" data-action="cat-add">${icon('sparkles', 18)} Add a category</button>` : ''}
+      <button type="button" class="btn primary" data-action="cat-save">Save categories ♡</button>
+    </div>`, 'cats');
+}
+async function saveCats() {
+  const used = new Set(), budgets = { ...(S.settings.budgets || {}) };
+  const list = ui.catDraft.filter(c => c.label.trim()).map(c => {
+    let id = c.id || slug(c.label);
+    while (used.has(id)) id += '-2';
+    used.add(id);
+    if (!(id in budgets)) budgets[id] = 50;
+    return { id, label: c.label.trim().slice(0, 20), emoji: c.emoji, color: c.color };
+  });
+  if (!list.some(c => c.id === 'other')) list.push({ ...BASE_CATS[7], color: CAT_COLORS[7] });
+  $('#play-dialog').close();
+  await fire(store.saveSettings({ categories: list, budgets }));
+  toast('Categories saved ♡');
+}
+
 /* ---------- receipt scanner (camera + Claude, see scanner.js and functions/index.js) ---------- */
 function startScan() {
   if ($('#add-dialog').open) $('#add-dialog').close();
   if (!store.scanReceipt) { toast('The receipt scanner needs the app to be signed in ✧'); return; }
   openScanner({
     cats: CATS, icon, money, esc, toast, today: todayStr, compress: compressImage,
-    scan: (image, type) => store.scanReceipt(image, type),
+    scan: (image, type) => store.scanReceipt(image, type, CATS.map(({ id, label }) => ({ id, label }))),
     save: async txs => {
       for (const t of txs) await fire(store.addTx({ id: uid(), type: 'expense', createdAt: new Date().toISOString(), ...t }));
       ui.month = (txs[0]?.date || todayStr()).slice(0, 7);
@@ -1073,7 +1174,7 @@ function openAdd(type = 'expense', goalId = '') {
   $(`input[name=type][value=${type}]`, f).checked = true;
   f.dataset.type = type;
   $('#amount-err').textContent = '';
-  $('#cat-chips').innerHTML = CATS.map((c, i) => `<button type="button" class="chip" role="radio" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-cat="${c.id}" style="--swatch:${catColor(c.id)}">${icon(c.id, 20)}${c.label}</button>`).join('');
+  $('#cat-chips').innerHTML = CATS.map((c, i) => `<button type="button" class="chip" role="radio" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-cat="${c.id}" style="--swatch:${catColor(c.id)}">${icon(c.emoji || c.id, 20)}${c.label}</button>`).join('');
   $('#goal-select').innerHTML = `<option value="">General savings</option>` + S.goals.map(g => `<option value="${esc(g.id)}" ${g.id === goalId ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
   ui.receipt = null; const pv = $('.receipt-preview', f); if (pv) { pv.hidden = true; pv.removeAttribute('src'); }
   $('#add-dialog').showModal();
@@ -1217,6 +1318,14 @@ document.addEventListener('click', async e => {
   }
   else if (a === 'open-import') openImport();
   else if (a === 'scan-receipt') startScan();
+  else if (a === 'edit-cats') openCatEditor();
+  else if (a === 'wallet-set') openWallet();
+  else if (a === 'wallet-clear') { $('#play-dialog').close(); await fire(store.saveSettings({ wallet: null })); toast('Stopped tracking your money'); }
+  else if (a === 'cat-pick') { ui.catPick = ui.catPick === +el.dataset.i ? null : +el.dataset.i; renderCatEditor(); }
+  else if (a === 'cat-icon') { if (ui.catPick !== null) ui.catDraft[ui.catPick].emoji = el.dataset.n; renderCatEditor(); }
+  else if (a === 'cat-add') { const i = ui.catDraft.length; ui.catDraft.splice(Math.max(0, i - 1), 0, { id: '', label: 'New category', emoji: 'heart', color: CAT_COLORS[i % CAT_COLORS.length] }); ui.catPick = Math.max(0, i - 1); renderCatEditor(); }
+  else if (a === 'cat-del') { ui.catDraft.splice(+el.dataset.i, 1); ui.catPick = null; renderCatEditor(); }
+  else if (a === 'cat-save') await saveCats();
   else if (a === 'csv-import') { if (el.getAttribute('aria-disabled') !== 'true') doImport(); }
   else if (a === 'view-receipt') {
     const t = S.transactions.find(x => x.id === el.dataset.id); if (!t?.receipt) return;
@@ -1285,6 +1394,7 @@ document.addEventListener('change', e => {
   if (e.target.dataset.actionInput === 'debt-extra') { ui.debtExtra = +e.target.value; render(); $('[data-action-input=debt-extra]')?.focus(); }
 });
 document.addEventListener('input', e => {
+  if (e.target.dataset?.catfield && ui.catDraft) { ui.catDraft[+e.target.dataset.i][e.target.dataset.catfield] = e.target.value; return; }
   if (e.target.form?.id === 'split-form' && e.target.type === 'range') updateSplit(e.target.form, e.target.name);
   if (e.target.dataset.actionInput === 'debt-extra') { const b = e.target.closest('.field')?.querySelector('b'); if (b) b.textContent = money(+e.target.value, true); }
   if (e.target.dataset.budget && e.target.type === 'range') {
@@ -1303,6 +1413,7 @@ document.addEventListener('submit', async e => {
   if (e.target.id === 'add-form') return submitAdd(e);
   e.preventDefault();
   const f = e.target;
+  if (f.id === 'wallet-form') return saveWallet(f);
   if (f.id === 'goal-form') {
     const target = parseFloat(String(f.target.value).replace(/[^0-9.]/g, ''));
     if (!f.name.value.trim() || !(target > 0)) { toast('Give your treasure a name and a target ✧'); return; }
@@ -1394,7 +1505,7 @@ document.querySelectorAll('.tabbar svg.ic, .topbar svg.ic').forEach(svg => {
 /* ================= boot ================= */
 async function boot() {
   store = await createStore({
-    onData(state) { S = state; if (!$('#app').hidden) render(); },
+    onData(state) { S = state; syncCats(); if (!$('#app').hidden) render(); },
     onAuth(user) {
       ui.user = user;
       if (!user) { $('#app').hidden = true; $('#auth').hidden = false; renderAuth(); return; }

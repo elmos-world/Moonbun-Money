@@ -1,4 +1,5 @@
 import { openScanner } from './scanner.js';
+import { billOccurrences, yearlyCost, autopayDue, upcoming, safeToSpend, findRecurring, priceChanges, ymd } from './money-plan.js';
 import { ICON_ART } from './magic-art.js';
 import { createStore, isCloudConfigured } from './store.js';
 import { rabbitSVG, dragonSVG, moonSVG } from './mascots.js';
@@ -229,6 +230,7 @@ function viewHomeBase() {
   </section>
 
   ${walletHTML()}
+  ${safeHTML()}
 
   <section class="tiles" aria-label="This month at a glance">
     ${tile('purse', 'Earned', st.income)}
@@ -658,14 +660,14 @@ function openLetter() {
 }
 
 /* ================= PLAN tab: bills, paycheck, wishlist, challenges, debts, safety net ================= */
-const PLAN_TABS = [['bills', 'Bills', 'bills'], ['paycheck', 'Paycheck', 'purse'], ['wishlist', 'Wishlist', 'gift'], ['challenges', 'Challenges', 'calendar'], ['debts', 'Debts', 'chain'], ['safety', 'Safety net', 'shield']];
+const PLAN_TABS = [['bills', 'Bills', 'bills'], ['calendar', 'Calendar', 'calendar'], ['paycheck', 'Paycheck', 'purse'], ['wishlist', 'Wishlist', 'gift'], ['challenges', 'Challenges', 'calendar'], ['debts', 'Debts', 'chain'], ['safety', 'Safety net', 'shield']];
 const fmtShort = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const dueText = n => n === 0 ? 'due today' : n === 1 ? 'due tomorrow' : `due in ${n} days`;
 const saveList = (key, list) => fire(store.saveSettings({ [key]: list }));
 
 function viewPlan() {
   const t = ui.planTab || 'bills';
-  const body = { bills: planBills, paycheck: planPaycheck, wishlist: planWishlist, challenges: planChallenges, debts: planDebts, safety: planSafety }[t]();
+  const body = { bills: planBills, calendar: planCalendar, paycheck: planPaycheck, wishlist: planWishlist, challenges: planChallenges, debts: planDebts, safety: planSafety }[t]();
   return `<section class="card" aria-labelledby="plan-title">
     <div class="card-head"><h2 id="plan-title" data-jp="計画">My money plan</h2></div>
     <div class="chips plan-chips" role="group" aria-label="Plan sections">${PLAN_TABS.map(([id, label, ic]) => `<button class="chip" data-action="plan-tab" data-t="${id}" aria-pressed="${t === id}">${icon(ic, 20)}${label}</button>`).join('')}</div>
@@ -684,13 +686,16 @@ function billRows() {
 function planBills() {
   const rows = billRows(), monthly = sum(S.settings.bills || [], b => monthlyCost(b));
   return `<section class="card" aria-labelledby="bills-title">
-    <div class="card-head"><h2 id="bills-title" data-jp="請求">Bills & subscriptions</h2><span class="tiny">About <b>${money(monthly)}</b> a month</span></div>
+    <div class="card-head"><h2 id="bills-title" data-jp="請求">Bills & subscriptions</h2><span class="tiny">About <b>${money(monthly)}</b> a month · <b>${money(monthly * 12)}</b> a year</span></div>
+    ${recurringHTML()}
     ${rows.length ? `<ul class="tx-list">${rows.map(({ b, due, n, paid, trialLeft }) => `<li class="tx bill ${paid ? 'paid' : n <= 3 ? 'soon' : ''}">
       <span class="ico" aria-hidden="true">${icon(b.cat || 'bills', 28)}</span>
       <div><div class="what">${esc(b.name)} ${trialLeft !== null && trialLeft >= 0 ? `<span class="pill trial">trial ends ${trialLeft === 0 ? 'today' : `in ${trialLeft}d`}</span>` : ''}</div>
-        <div class="sub">${b.freq} · ${paid ? 'paid for this cycle ✓' : `${dueText(n)} (${fmtShort(due)})`}</div></div>
+        <div class="sub">${b.freq} · ${paid ? 'paid for this cycle ✓' : `${dueText(n)} (${fmtShort(due)})`} · ${money(yearlyCost(b))} a year${b.autopay ? ' · <span class="pill auto">autopay</span>' : ''}</div>
+        ${priceNote(b)}</div>
       <span class="amt">${money(+b.amount)}</span>
-      <span class="bill-actions">${paid ? '' : `<button class="btn small primary" data-action="bill-paid" data-id="${b.id}">Paid ♡</button>`}
+      <span class="bill-actions">${paid || b.autopay ? '' : `<button class="btn small primary" data-action="bill-paid" data-id="${b.id}">Paid ♡</button>`}
+      <button class="btn small ghost" data-action="bill-auto" data-id="${b.id}" aria-pressed="${!!b.autopay}" title="Autopay logs this bill by itself on its due date">${b.autopay ? 'Autopay on' : 'Autopay'}</button>
       <button class="icon-btn del" data-action="bill-del" data-id="${b.id}" aria-label="Remove ${esc(b.name)}">${icon('trash', 20)}</button></span></li>`).join('')}</ul>`
       : `<p class="muted">Add your rent, phone, streaming and other regular bills. Yutu will remind you before they’re due, and before free trials turn into paid ones.</p>`}
     <h3 style="margin-top:16px">Add a bill ✧</h3>
@@ -701,6 +706,7 @@ function planBills() {
       <label class="field"><span>Next due date</span><input name="due" type="date" required value="${todayStr()}"></label>
       <label class="field"><span>Category</span><select name="cat">${CATS.map(c => `<option value="${c.id}" ${c.id === 'bills' ? 'selected' : ''}>${c.label}</option>`).join('')}</select></label>
       <label class="field"><span>Free trial ends (optional)</span><input name="trial" type="date"></label>
+      <label class="check"><input type="checkbox" name="autopay"> <span>Autopay: log it by itself on the due date</span></label>
       <button class="btn jade" type="submit">Add bill</button>
     </form>
   </section>`;
@@ -715,6 +721,11 @@ function planPaycheck() {
     <div class="card-head"><h2 id="pay-title" data-jp="給料">Paycheck planner</h2></div>
     <form id="split-form" autocomplete="off">
       <label class="field"><span>A typical paycheck</span><input name="pay" inputmode="decimal" value="${esc(sp.pay)}" placeholder="800"></label>
+      <div class="form-grid pay-when">
+        <label class="field"><span>How often you’re paid</span><select name="payFreq">${[['', 'Not set'], ['weekly', 'Every week'], ['biweekly', 'Every 2 weeks'], ['monthly', 'Every month']].map(([v, l]) => `<option value="${v}" ${(sp.payFreq || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="field"><span>Next payday</span><input name="nextPay" type="date" value="${esc(sp.nextPay || '')}"></label>
+      </div>
+      <p class="tiny">Your paydays show on the Calendar, and Safe to spend counts the days until the next one.</p>
       <div class="split-jars">${jar('needs', 'Needs', 'house', '#d6f0ff')}${jar('wants', 'Wants', 'dango', '#ffe0ee')}${jar('save', 'Savings', 'coin', '#fff2c4')}</div>
       <label class="field"><span>Needs (rent, food, bills, transport)</span><input type="range" name="needs" min="0" max="100" step="5" value="${sp.needs}"></label>
       <label class="field"><span>Wants (fun, treats, shopping)</span><input type="range" name="wants" min="0" max="100" step="5" value="${sp.wants}"></label>
@@ -1060,6 +1071,79 @@ function setTab(tab) {
   window.scrollTo({ top: 0, behavior: S.settings.reduceMotion ? 'auto' : 'smooth' });
 }
 
+/* ---------- subscription finder, price alerts, safe to spend, money calendar (money-plan.js) ---------- */
+function recurringHTML() {
+  const list = findRecurring(S.transactions, S.settings.bills || [], S.settings.recurringDismissed || []).slice(0, 6);
+  ui.recurring = list;
+  if (!list.length) return '';
+  const every = { weekly: 'every week', monthly: 'every month', yearly: 'every year' };
+  return `<div class="rec-found"><p class="rec-title">${icon('sparkles', 20)} Yutu found charges that repeat. Add them as bills?</p>
+    <ul>${list.map(r => `<li><span class="ico">${icon(catById(r.cat).emoji || 'bills', 26)}</span>
+      <div><b>${esc(r.name)}</b> · ${money(r.amount)} ${every[r.freq]}
+        <div class="sub">${r.count} times so far · last on ${fmtDate(r.lastDate)} · ${money(yearlyCost(r))} a year${r.was ? ` · <span class="up">went up from ${money(r.was)}</span>` : ''}</div></div>
+      <span class="rec-btns"><button class="btn small primary" data-action="rec-add" data-k="${esc(r.key)}">Add</button><button class="btn small ghost" data-action="rec-dismiss" data-k="${esc(r.key)}">Not a bill</button></span></li>`).join('')}</ul></div>`;
+}
+function priceNote(b) {
+  const p = priceChanges([b], S.transactions)[0];
+  return p ? `<div class="price-up">${icon('sparkles', 16)} The price went up: your last ${esc(b.name)} charge was <b>${money(p.to)}</b> (${fmtDate(p.date)}), not ${money(p.from)}.
+    <button class="btn small ghost" data-action="bill-price" data-id="${b.id}" data-to="${p.to}">Update to ${money(p.to)}</button></div>` : '';
+}
+function safeHTML() {
+  const now = walletNow(); if (now === null) return '';
+  const cur = monthKey(new Date()), st = monthStats(cur);
+  const s = safeToSpend({ money: now, bills: S.settings.bills || [], split: S.settings.split || {}, savingsTarget: +S.settings.savingsTarget || 0, savedThisMonth: st.saved });
+  const short = d => d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return `<section class="card safe" aria-labelledby="safe-title">
+    <div class="card-head"><h2 id="safe-title" data-jp="安心">Safe to spend</h2><button class="btn small ghost" data-action="go-calendar">${icon('calendar', 18)} Next 30 days</button></div>
+    <p class="safe-amt ${s.safe < 0 ? 'neg' : ''}">${money(s.safe)}</p>
+    <p class="tiny">${s.safe < 0 ? 'Bills and savings need more than you have right now. Yutu says: take it gently until payday ✧'
+      : s.payday ? `About <b>${money(s.perDay)}</b> a day until payday on ${short(s.payday)} ✧` : `About <b>${money(s.perDay)}</b> a day for the next 30 days. Add your payday in Plan → Paycheck for a better number ✧`}</p>
+    <ul class="safe-math">
+      <li><span>My money</span><b>${money(s.money)}</b></li>
+      <li><span>Bills due before ${s.payday ? 'payday' : 'the next 30 days end'}${s.bills.length ? ` (${s.bills.map(b => esc(b.name)).join(', ')})` : ''}</span><b>− ${money(s.billsTotal)}</b></li>
+      <li><span>Still to save this month</span><b>− ${money(s.saving)}</b></li>
+    </ul>
+  </section>`;
+}
+function planCalendar() {
+  const now = walletNow(), today = new Date(), days = 30;
+  const ev = upcoming({ bills: S.settings.bills || [], split: S.settings.split || {}, start: now, today, days });
+  const byDay = new Map(); ev.forEach(e => { const k = ymd(e.date); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(e); });
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()), lead = (start.getDay() + 6) % 7;
+  const cells = [];
+  for (let i = -lead; i < days + 1; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), es = byDay.get(k) || [];
+    cells.push(`<div class="mc-cell ${i < 0 ? 'past' : ''} ${i === 0 ? 'today' : ''}" title="${es.map(e => `${e.name} ${money(Math.abs(e.amount))}`).join(', ')}">
+      <span class="mc-d">${d.getDate()}</span>${es.map(e => `<i class="mc-dot ${e.kind}"></i>`).join('')}</div>`);
+  }
+  const low = ev.find(e => e.balance !== undefined && e.balance < 0);
+  const totalOut = ev.filter(e => e.amount < 0).reduce((a, e) => a - e.amount, 0), totalIn = ev.filter(e => e.amount > 0).reduce((a, e) => a + e.amount, 0);
+  const dayLabel = k => new Date(k + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return `<section class="card" aria-labelledby="cal-title">
+    <div class="card-head"><h2 id="cal-title" data-jp="予定">Upcoming money</h2><span class="tiny">Next ${days} days · in ${money(totalIn)} · out ${money(totalOut)}</span></div>
+    ${low ? `<p class="price-up">${icon('sparkles', 16)} Heads up: you might run short around <b>${dayLabel(ymd(low.date))}</b> (${money(low.balance)}). Moving a bill or saving a little first would help ✧</p>` : ''}
+    <div class="mc-week" aria-hidden="true">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<span>${d}</span>`).join('')}</div>
+    <div class="mc-grid" aria-hidden="true">${cells.join('')}</div>
+    <div class="tr-legend"><span><i class="mc-dot pay"></i>Payday</span><span><i class="mc-dot bill"></i>Bill</span></div>
+    ${ev.length ? `<ul class="mc-list">${[...byDay].map(([k, es]) => `<li><div class="mc-date">${dayLabel(k)}</div>
+      ${es.map(e => `<div class="mc-ev ${e.kind}"><span class="ico">${icon(e.kind === 'pay' ? 'purse' : (catById(e.cat).emoji || 'bills'), 22)}</span>
+        <span class="mc-name">${esc(e.name)}${e.autopay ? ' <span class="pill auto">autopay</span>' : ''}${e.trial ? ' <span class="pill trial">trial</span>' : ''}</span>
+        <b class="mc-amt">${e.amount < 0 ? '−' : '+'} ${money(Math.abs(e.amount))}</b>${e.balance !== undefined ? `<span class="mc-bal ${e.balance < 0 ? 'neg' : ''}">${money(e.balance)} left</span>` : ''}</div>`).join('')}</li>`).join('')}</ul>`
+      : `<p class="muted">No bills or paydays in the next ${days} days. Add bills in Plan → Bills and your payday in Plan → Paycheck ✧</p>`}
+    ${now === null ? `<p class="tiny">Set <b>My money</b> on Home to see how much you’ll have left after each one.</p>` : ''}
+  </section>`;
+}
+// autopay: once a day when the app opens, log the bills that are due and set to autopay
+async function runAutopay() {
+  if (ui.autopayDay === todayStr() || !(S.settings.bills || []).some(b => b.autopay)) return;
+  ui.autopayDay = todayStr();
+  const { entries, bills } = autopayDue(S.settings.bills, new Date());
+  if (!entries.length) return;
+  await saveList('bills', bills);
+  for (const e of entries) await fire(store.addTx({ id: uid(), createdAt: new Date().toISOString(), ...e }));
+  toast(entries.length === 1 ? `Autopay: ${entries[0].note} (${money(entries[0].amount)}) logged ✧` : `Autopay: ${entries.length} bills logged ✧`);
+}
+
 /* ---------- my money: what I have now; spending is taken off it, earnings added ---------- */
 // settings.wallet = { amount, since }: the amount you told Yutu, and when. Entries added after that change it:
 // money earned is added; money spent or moved into Bao's hoard is taken off.
@@ -1281,7 +1365,7 @@ document.addEventListener('click', async e => {
     const r = billRows().find(x => x.b.id === el.dataset.id); if (!r) return;
     const bills = S.settings.bills.map(b => b.id === r.b.id ? { ...b, paid: [...(b.paid || []).slice(-11), r.key] } : b);
     await fire(store.saveSettings({ bills }));
-    await fire(store.addTx({ id: uid(), type: 'expense', amount: +r.b.amount, category: r.b.cat || 'bills', note: r.b.name, date: todayStr(), createdAt: new Date().toISOString() }));
+    await fire(store.addTx({ id: uid(), type: 'expense', amount: +r.b.amount, category: r.b.cat || 'bills', note: r.b.name, date: todayStr(), createdAt: new Date().toISOString(), billId: r.b.id }));
     sound('pop'); yutuReact('expense'); toast(`${r.b.name} paid and logged ✧`);
   }
   else if (a === 'bill-del') { const old = S.settings.bills; await saveList('bills', old.filter(b => b.id !== el.dataset.id)); toast('Bill removed', () => saveList('bills', old)); }
@@ -1319,6 +1403,22 @@ document.addEventListener('click', async e => {
   else if (a === 'open-import') openImport();
   else if (a === 'scan-receipt') startScan();
   else if (a === 'edit-cats') openCatEditor();
+  else if (a === 'bill-auto') {
+    const bills = S.settings.bills.map(b => b.id === el.dataset.id ? (b.autopay ? { ...b, autopay: false } : { ...b, autopay: true, autoFrom: todayStr() }) : b);
+    await saveList('bills', bills); const b = bills.find(x => x.id === el.dataset.id);
+    toast(b.autopay ? `${b.name} will log itself on its due date ✧` : `Autopay off for ${b.name}`);
+  }
+  else if (a === 'bill-price') {
+    const bills = S.settings.bills.map(b => b.id === el.dataset.id ? { ...b, amount: +el.dataset.to } : b);
+    await saveList('bills', bills); toast('Price updated ♡');
+  }
+  else if (a === 'rec-add') {
+    const r = ui.recurring?.find(x => x.key === el.dataset.k); if (!r) return;
+    const bill = { id: uid(), name: r.name, amount: r.amount, freq: r.freq, day: r.day, month: r.month, weekday: r.weekday, cat: r.cat, paid: [] };
+    await saveList('bills', [...(S.settings.bills || []), bill]); sound('pop'); toast(`${r.name} added to your bills ♡`);
+  }
+  else if (a === 'rec-dismiss') { await fire(store.saveSettings({ recurringDismissed: [...(S.settings.recurringDismissed || []), el.dataset.k].slice(-100) })); toast('Yutu won’t suggest that one again'); }
+  else if (a === 'go-calendar') { ui.planTab = 'calendar'; setTab('plan'); }
   else if (a === 'wallet-set') openWallet();
   else if (a === 'wallet-clear') { $('#play-dialog').close(); await fire(store.saveSettings({ wallet: null })); toast('Stopped tracking your money'); }
   else if (a === 'cat-pick') { ui.catPick = ui.catPick === +el.dataset.i ? null : +el.dataset.i; renderCatEditor(); }
@@ -1423,11 +1523,11 @@ document.addEventListener('submit', async e => {
     const amount = parseAmount(f.amount.value);
     if (!f.name.value.trim() || !(amount > 0)) { toast('Give the bill a name and an amount ✧'); return; }
     const [y, m, d] = f.due.value.split('-').map(Number), wd = new Date(y, m - 1, d).getDay();
-    const bill = { id: uid(), name: f.name.value.trim(), amount: Math.abs(amount), freq: f.freq.value, day: d, month: m, weekday: wd, cat: f.cat.value, paid: [], ...(f.trial.value ? { trialEnds: f.trial.value } : {}) };
+    const bill = { id: uid(), name: f.name.value.trim(), amount: Math.abs(amount), freq: f.freq.value, day: d, month: m, weekday: wd, cat: f.cat.value, paid: [], ...(f.trial.value ? { trialEnds: f.trial.value } : {}), ...(f.autopay?.checked ? { autopay: true, autoFrom: f.due.value } : {}) };
     await saveList('bills', [...(S.settings.bills || []), bill]); sound('pop'); toast(`${bill.name} added. Yutu will remind you ♡`);
   } else if (f.id === 'split-form') {
     const n = +f.needs.value, w = Math.min(+f.wants.value, 100 - n);
-    await fire(store.saveSettings({ split: { needs: n, wants: w, save: 100 - n - w, pay: f.pay.value.trim() } })); sound('chime'); toast('Paycheck plan saved ✧');
+    await fire(store.saveSettings({ split: { needs: n, wants: w, save: 100 - n - w, pay: f.pay.value.trim(), payFreq: f.payFreq?.value || '', nextPay: f.nextPay?.value || '' } })); sound('chime'); toast('Paycheck plan saved ✧');
   } else if (f.id === 'wish-form') {
     const price = parseAmount(f.price.value);
     if (!f.name.value.trim() || !(price > 0)) { toast('What is it, and how much? ✧'); return; }
@@ -1505,7 +1605,7 @@ document.querySelectorAll('.tabbar svg.ic, .topbar svg.ic').forEach(svg => {
 /* ================= boot ================= */
 async function boot() {
   store = await createStore({
-    onData(state) { S = state; syncCats(); if (!$('#app').hidden) render(); },
+    onData(state) { S = state; syncCats(); if (!$('#app').hidden) render(); setTimeout(runAutopay, 800); },
     onAuth(user) {
       ui.user = user;
       if (!user) { $('#app').hidden = true; $('#auth').hidden = false; renderAuth(); return; }

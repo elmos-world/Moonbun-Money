@@ -2345,3 +2345,47 @@ input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: sc
 .pal i { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mg-gold, #f2c96d); }
 .palette input:checked + .pal { background: var(--mg-pink-3) !important; border-color: var(--mg-pink) !important; box-shadow: 0 4px 12px rgba(var(--mg-glow-rgb), .3) !important; }
 .palette input:checked + .pal::after { color: var(--mg-ink-accent) !important; }
+
+/* ---------- subscription finder, price alerts, autopay ---------- */
+.rec-found { margin: 6px 0 12px; padding: 12px; border-radius: 22px; background: linear-gradient(160deg, #fff, var(--mg-gold-2, #fff0c4));
+  box-shadow: inset 0 0 0 2px var(--mg-gold-2, #fff0c4); }
+.rec-title { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-weight: 800; color: var(--mg-plum, #6b4672); }
+.rec-found ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rec-found li { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 16px; background: #fff; }
+.rec-found .sub, .price-up { font-size: .78rem; color: var(--mg-plum-2, #8d6a93); }
+.rec-found .up { color: var(--mg-ink-accent); font-weight: 800; }
+.rec-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.price-up { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 10px; border-radius: 14px; background: var(--mg-pink-3); color: var(--mg-plum, #6b4672); }
+.pill.auto { background: var(--mg-mint-2, #dcf7ee) !important; color: #2f7f62 !important; padding: 1px 8px; border-radius: 99px; font-size: .72rem; }
+.bill-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+.bill-actions [aria-pressed=true] { background: var(--mg-mint-2, #dcf7ee) !important; color: #2f7f62 !important; }
+.check { display: flex; align-items: center; gap: 8px; font-size: .9rem; grid-column: 1 / -1; }
+.check input { width: 20px; height: 20px; accent-color: var(--mg-deep); }
+.pay-when { margin: 4px 0; }
+
+/* ---------- safe to spend ---------- */
+.safe { background: linear-gradient(160deg, #fff, var(--mg-mint-2, #dcf7ee)) !important; }
+.safe-amt { margin: 0; font-family: var(--title); font-size: 2.2rem; color: #2f7f62; }
+.safe-amt.neg { color: #d0457f; }
+.safe-math { list-style: none; margin: 10px 0 0; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, .8); display: grid; gap: 4px; font-size: .85rem; }
+.safe-math li { display: flex; justify-content: space-between; gap: 10px; }
+.safe-math li span { color: var(--mg-plum-2, #8d6a93); }
+
+/* ---------- upcoming money calendar ---------- */
+.mc-week, .mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.mc-week span { text-align: center; font-size: .7rem; color: var(--mg-plum-2, #8d6a93); }
+.mc-cell { min-height: 42px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--mg-pink-3); padding: 3px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 2px; }
+.mc-cell.past { opacity: .35; }
+.mc-cell.today { box-shadow: inset 0 0 0 2px var(--mg-gold, #f2c96d); }
+.mc-d { width: 100%; font-size: .7rem; color: var(--mg-plum-2, #8d6a93); }
+.mc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.mc-dot.pay { background: #f2c96d; box-shadow: 0 0 0 1.5px #fff; }
+.mc-dot.bill { background: var(--mg-deep); box-shadow: 0 0 0 1.5px #fff; }
+.mc-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.mc-date { font-family: var(--title); font-size: .9rem; color: var(--mg-plum, #6b4672); margin-bottom: 4px; }
+.mc-ev { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 8px; align-items: center; padding: 8px 10px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--mg-pink-3); }
+.mc-ev.pay { background: linear-gradient(160deg, #fff, var(--mg-gold-2, #fff0c4)); }
+.mc-amt { white-space: nowrap; }
+.mc-ev.pay .mc-amt { color: #2f7f62; }
+.mc-bal { grid-column: 2 / -1; font-size: .75rem; color: var(--mg-plum-2, #8d6a93); text-align: right; }
+.mc-bal.neg { color: #d0457f; font-weight: 800; }
